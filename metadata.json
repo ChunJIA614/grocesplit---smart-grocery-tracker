@@ -1,0 +1,5 @@
+{
+  "name": "GroceSplit - Smart Grocery Tracker",
+  "description": "A smart grocery inventory and expense splitting tracker. Manage fridge inventory, track usage, and automatically calculate shared costs among housemates.",
+  "requestFramePermissions": []
+}
