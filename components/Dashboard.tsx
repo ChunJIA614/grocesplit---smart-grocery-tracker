@@ -20,9 +20,6 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
     // Initialize map
     users.forEach(u => debtMap[u.id] = 0);
 
-    // Debugging: Ensure all users are initialized in debtMap
-    console.log('Initialized debtMap:', debtMap);
-
     const currentUserUnpaidItems: { item: GroceryItem, amount: number }[] = [];
 
     usedItems.forEach(item => {
@@ -33,13 +30,6 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
       const paidBy = item.paidBy || [];
       
       item.sharedBy.forEach(userId => {
-        // Debugging: Log calculations for each user
-        console.log(`Processing user ${userId} for item ${item.id}:`, {
-          costPerPerson,
-          paidBy,
-          debtBefore: debtMap[userId],
-        });
-
         // If this user has NOT paid yet, add to their debt
         if (!paidBy.includes(userId)) {
            if (debtMap[userId] !== undefined) {
@@ -51,15 +41,8 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
              currentUserUnpaidItems.push({ item, amount: costPerPerson });
            }
         }
-
-        // Debugging: Log updated debt
-        console.log(`Updated debt for user ${userId}:`, debtMap[userId]);
       });
     });
-
-    // Debugging: Log final debtMap and totalOutstanding
-    console.log('Final debtMap:', debtMap);
-    console.log('Total Outstanding:', totalOutstanding);
 
     const chartData = users.map(u => ({
       name: u.name,
@@ -73,6 +56,9 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
 
     // 3. Outstanding Total (Total Owed by everyone)
     const totalOutstanding = Object.values(debtMap).reduce((acc, v) => acc + v, 0);
+
+    console.log('Debt Map:', debtMap); // Debugging: Log the debt map
+    console.log('Total Outstanding:', totalOutstanding); // Debugging: Log the total outstanding amount
 
     return { chartData, fridgeValue, totalOutstanding, fridgeCount: fridgeItems.length, currentUserUnpaidItems, currentUserDebt: debtMap[currentUser.id] };
   }, [items, users, currentUser]);
