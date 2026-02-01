@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { GroceryItem, ItemStatus, User } from '../types';
 import { GroceryService } from '../services/groceryService';
-import { Check, CheckCircle2 } from 'lucide-react';
+import { Check, CheckCircle2, Banknote } from 'lucide-react';
 
 interface Props {
   items: GroceryItem[];
@@ -60,8 +60,22 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
     return { chartData, fridgeValue, totalOutstanding, fridgeCount: fridgeItems.length, currentUserUnpaidItems, currentUserDebt: debtMap[currentUser.id] };
   }, [items, users, currentUser]);
 
+  const [isClearing, setIsClearing] = useState(false);
+
   const handleMarkPaid = (item: GroceryItem) => {
     GroceryService.markSharePaid(item.id, currentUser.id, true);
+  };
+
+  const handleClearAllOutstanding = async () => {
+    if (stats.totalOutstanding <= 0) return;
+    if (!confirm('Are you sure you want to clear all outstanding payments for everyone?')) return;
+    
+    setIsClearing(true);
+    try {
+      await GroceryService.clearAllOutstandingPayments();
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   const CHART_COLORS = ['#0d6efd', '#6610f2', '#198754', '#ffc107', '#dc3545', '#0dcaf0'];
@@ -79,6 +93,18 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
           <p className="text-blue-200 text-xs mt-2">{stats.currentUserUnpaidItems.length} unpaid items</p>
         </div>
       </div>
+
+      {/* Clear All Outstanding Button */}
+      {stats.totalOutstanding > 0 && (
+        <button
+          onClick={handleClearAllOutstanding}
+          disabled={isClearing}
+          className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-md shadow-green-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <Banknote className="w-5 h-5" />
+          {isClearing ? 'Clearing...' : `Clear All Outstanding ($${stats.totalOutstanding.toFixed(2)})`}
+        </button>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         

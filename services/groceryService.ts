@@ -305,5 +305,35 @@ export const GroceryService = {
         console.warn("Firebase deleteUser failed:", e);
       }
     }
+  },
+
+  clearAllOutstandingPayments: async () => {
+    // Mark all items as paid by all users who share them
+    const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
+    const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
+    
+    const updatedItems = localItems.map(item => {
+      if (item.status === ItemStatus.USED && item.sharedBy.length > 0) {
+        // Set paidBy to include all users who shared the item
+        return { ...item, paidBy: [...item.sharedBy] };
+      }
+      return item;
+    });
+    
+    GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, updatedItems);
+    
+    if (db) {
+      try {
+        // Update each item in Firebase
+        const updatePromises = updatedItems
+          .filter(item => item.status === ItemStatus.USED && item.sharedBy.length > 0)
+          .map(item => setDoc(doc(db, 'items', item.id), { paidBy: item.paidBy }, { merge: true }));
+        
+        await Promise.all(updatePromises);
+        console.log("All outstanding payments cleared in Firebase");
+      } catch (e) {
+        console.warn("Firebase clearAllOutstandingPayments failed:", e);
+      }
+    }
   }
 };
