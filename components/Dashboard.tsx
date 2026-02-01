@@ -57,8 +57,13 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
       });
     });
 
-    // Debugging: Log final debtMap and totalOutstanding
+    // Debugging: Log final debtMap
     console.log('Final debtMap:', debtMap);
+
+    // 3. Outstanding Total (Total Owed by everyone)
+    const totalOutstanding = Object.values(debtMap).reduce((acc, v) => acc + v, 0);
+
+    // Debugging: Log totalOutstanding
     console.log('Total Outstanding:', totalOutstanding);
 
     const chartData = users.map(u => ({
@@ -70,9 +75,6 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
     // 2. Fridge Value (Pending Cost)
     const fridgeItems = items.filter(i => i.status === ItemStatus.FRIDGE);
     const fridgeValue = fridgeItems.reduce((acc, curr) => acc + curr.totalPrice, 0);
-
-    // 3. Outstanding Total (Total Owed by everyone)
-    const totalOutstanding = Object.values(debtMap).reduce((acc, v) => acc + v, 0);
 
     return { chartData, fridgeValue, totalOutstanding, fridgeCount: fridgeItems.length, currentUserUnpaidItems, currentUserDebt: debtMap[currentUser.id] };
   }, [items, users, currentUser]);
