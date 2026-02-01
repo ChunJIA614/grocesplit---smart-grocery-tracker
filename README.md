@@ -2,30 +2,48 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# GroceSplit - Smart Grocery Tracker
+# 🛒 GroceSplit - Smart Grocery Tracker
 
-A Progressive Web App (PWA) for tracking and splitting grocery expenses with your household. Features real-time sync across all devices using Firebase.
+A modern Progressive Web App (PWA) for tracking and splitting grocery expenses with your household. Features real-time sync across all devices using Firebase and AI-powered grocery parsing with Google Gemini.
 
-## Features
+## ✨ Features
 
-- 📱 **PWA Support** - Install on any device (iOS, Android, Desktop)
-- 🔄 **Real-time Sync** - Data syncs across all users via Firebase
+- 📱 **PWA Support** - Install on any device (iOS, Android, Desktop) for a native-like experience
+- 🔄 **Real-time Sync** - Data syncs across all users via Firebase Firestore
 - 💰 **Cost Splitting** - Easily split grocery costs among household members
-- 📊 **Dashboard** - Visual insights into spending patterns
-- 🤖 **AI-Powered** - Smart grocery parsing with Gemini AI
-- 📶 **Offline Support** - Works without internet, syncs when back online
+- 📊 **Dashboard** - Visual insights into spending patterns with interactive charts (Recharts)
+- 🤖 **AI-Powered Parsing** - Smart grocery text parsing with Gemma 3 4B via Google GenAI
+- 🍳 **Recipe Suggestions** - AI-generated recipe ideas based on your current ingredients
+- 📶 **Offline Support** - Works without internet, syncs when back online (IndexedDB persistence)
+- 👥 **Multi-user Management** - Add and manage household members with custom avatars
+- 🔐 **Simple Login** - Quick user identification for cost tracking
 
-## Quick Start
+## 🛠️ Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| **React 19** | UI Framework |
+| **TypeScript** | Type Safety |
+| **Vite** | Build Tool & Dev Server |
+| **Firebase Firestore** | Real-time Database & Sync |
+| **Google GenAI (Gemma 3 4B)** | AI Grocery Parsing & Recipe Suggestions |
+| **Recharts** | Data Visualization |
+| **Lucide React** | Icons |
+| **Workbox** | PWA Service Worker |
+
+## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+
 - Firebase account (for cloud sync)
-- Gemini API key (optional, for AI features)
+- Google AI API key (for AI features)
 
 ### Installation
 
 1. **Clone and install dependencies:**
    ```bash
+   git clone <repository-url>
+   cd grocesplit---smart-grocery-tracker
    npm install
    ```
 
@@ -33,24 +51,37 @@ A Progressive Web App (PWA) for tracking and splitting grocery expenses with you
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` and add your Firebase and Gemini API keys.
+   
+   Edit `.env` and add your credentials:
+   ```env
+   # Gemini AI Configuration
+   GEMINI_API_KEY=your_google_ai_api_key
+   
+   # Firebase Configuration
+   FIREBASE_API_KEY=your_firebase_api_key
+   FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   FIREBASE_PROJECT_ID=your-project-id
+   FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+   FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   FIREBASE_APP_ID=your_app_id
+   ```
 
-3. **Run the app:**
+3. **Run the development server:**
    ```bash
    npm run dev
    ```
 
 4. Open http://localhost:3000
 
-## Firebase Setup (Required for Cloud Sync)
+## 🔥 Firebase Setup
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project
-3. Enable Firestore Database (start in test mode for development)
-4. Go to Project Settings > General > Your apps
+2. Create a new project or select existing
+3. Enable **Firestore Database** (start in test mode for development)
+4. Go to **Project Settings > General > Your apps**
 5. Add a web app and copy the config values to your `.env` file
 
-### Firestore Security Rules (for production)
+### Firestore Security Rules (Production)
 
 ```javascript
 rules_version = '2';
@@ -66,14 +97,48 @@ service cloud.firestore {
 }
 ```
 
-## Building for Production
+## 🤖 AI Features Setup
 
-```bash
-npm run build
-npm run preview  # Preview the production build
+The app uses **Google GenAI** with the **Gemma 3 4B** model for:
+- **Smart Grocery Parsing** - Natural language input like "2 apples, milk for everyone, bread for John"
+- **Recipe Suggestions** - AI-generated recipes based on your current fridge contents
+
+### Get Your API Key
+1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Create or select a project
+3. Generate an API key
+4. Add it to your `.env` file as `GEMINI_API_KEY`
+
+> **Note:** If Gemma 3 4B is not available, you can change the model in [services/geminiService.ts](services/geminiService.ts) to `gemini-2.0-flash` or `gemini-1.5-flash`.
+
+## 📱 App Structure
+
+```
+├── App.tsx                 # Main application component
+├── types.ts                # TypeScript type definitions
+├── index.tsx               # Entry point
+├── components/
+│   ├── Dashboard.tsx       # Spending analytics & charts
+│   ├── GroceryList.tsx     # Item list with filtering
+│   ├── AddGroceryModal.tsx # Add/edit items modal
+│   ├── ManageUsersModal.tsx# User management
+│   ├── LoginScreen.tsx     # User login/selection
+│   └── Button.tsx          # Reusable button component
+├── services/
+│   ├── firebaseConfig.ts   # Firebase initialization
+│   ├── groceryService.ts   # CRUD operations for items/users
+│   └── geminiService.ts    # AI parsing & recipe generation
+└── public/                 # PWA assets & icons
 ```
 
-## Converting to Android APK
+## 🏗️ Building for Production
+
+```bash
+npm run build      # Build production bundle
+npm run preview    # Preview production build locally
+```
+
+## 📲 Converting to Android APK
 
 ### Option 1: PWA Builder (Recommended)
 
@@ -103,9 +168,9 @@ npm run preview  # Preview the production build
    npx cap open android
    ```
 
-4. Build APK from Android Studio: Build > Build Bundle(s) / APK(s) > Build APK(s)
+4. Build APK: **Build > Build Bundle(s) / APK(s) > Build APK(s)**
 
-## Deploying to Firebase Hosting
+## 🚀 Deploying to Firebase Hosting
 
 1. **Install Firebase CLI:**
    ```bash
@@ -117,6 +182,9 @@ npm run preview  # Preview the production build
    firebase login
    firebase init hosting
    ```
+   - Select your Firebase project
+   - Set public directory to `dist`
+   - Configure as single-page app: Yes
 
 3. **Deploy:**
    ```bash
@@ -124,18 +192,27 @@ npm run preview  # Preview the production build
    firebase deploy
    ```
 
-## Environment Variables
+## 📋 Environment Variables Reference
 
 | Variable | Description | Required |
 |----------|-------------|----------|
+| `GEMINI_API_KEY` | Google AI API Key for Gemma/Gemini | Optional (for AI) |
 | `FIREBASE_API_KEY` | Firebase API Key | Yes (for sync) |
 | `FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain | Yes (for sync) |
 | `FIREBASE_PROJECT_ID` | Firebase Project ID | Yes (for sync) |
-| `FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket | No |
-| `FIREBASE_MESSAGING_SENDER_ID` | Firebase Messaging Sender ID | No |
+| `FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket | Optional |
+| `FIREBASE_MESSAGING_SENDER_ID` | Firebase Messaging Sender ID | Optional |
 | `FIREBASE_APP_ID` | Firebase App ID | Yes (for sync) |
-| `GEMINI_API_KEY` | Google Gemini API Key | No (for AI features) |
 
-## License
+## 🔧 Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server on port 3000 |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run generate-icons` | Generate PWA icons from source |
+
+## 📄 License
 
 MIT
