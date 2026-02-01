@@ -37,7 +37,50 @@
         font-family: 'Inter', sans-serif; 
         background-color: #f3f4f6;
         overscroll-behavior-y: contain;
+        -webkit-tap-highlight-color: transparent;
       }
+      
+      /* Safe area padding for notched phones */
+      .safe-area-top {
+        padding-top: env(safe-area-inset-top);
+      }
+      .pb-safe {
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+      }
+      
+      /* Modal slide-up animation */
+      @keyframes slide-up {
+        from {
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      .animate-slide-up {
+        animation: slide-up 0.3s ease-out;
+      }
+      
+      /* Smooth touch interactions */
+      button, a {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      
+      /* Custom scrollbar for lists */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 2px;
+      }
+      
       /* PWA splash screen styling */
       .pwa-splash {
         position: fixed;

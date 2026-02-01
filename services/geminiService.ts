@@ -1,75 +1,80 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { User } from "../types";
 
-const apiKey = process.env.API_KEY || '';
+// Use the correct environment variable name
+const apiKey = process.env.GEMINI_API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
+
+// Using Gemma 3 4B model
+const MODEL_NAME = "gemma-3-4b-it";
 
 export const parseGroceryText = async (text: string, users: User[]) => {
   if (!apiKey) {
-    console.error("API Key missing");
+    console.error("API Key missing. Make sure GEMINI_API_KEY is set in .env");
     throw new Error("API Key is missing. Please check your configuration.");
   }
 
   const userNames = users.map(u => u.name).join(', ');
 
-  const prompt = `
-    Extract grocery items from the following text: "${text}".
-    
-    The available users for splitting costs are: ${userNames}.
-    If the text implies who it is for (e.g. "for everyone", "for me and Alice"), try to map them to the available users. 
-    If not specified, assume it is shared by everyone.
-    
-    Return a JSON array where each object has:
-    - name (string)
-    - quantity (number)
-    - unit (string, e.g. "kg", "pcs", "pack")
-    - totalPrice (number)
-    - sharedBy (array of strings, matching the EXACT names provided above)
-  `;
+  const prompt = `You are a grocery parsing assistant. Extract grocery items from this text and return valid JSON.
+
+Text: "${text}"
+
+Available users for cost splitting: ${userNames}
+
+Instructions:
+- If text mentions who items are for (e.g. "for everyone", "for me and Alice"), map to matching user names
+- If not specified, include all users
+- Return ONLY a JSON array, no other text
+
+JSON format:
+[{"name": "item name", "quantity": 1, "unit": "pcs", "totalPrice": 0.00, "sharedBy": ["User1", "User2"]}]
+
+Parse the text now:`;
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: MODEL_NAME,
       contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              quantity: { type: Type.NUMBER },
-              unit: { type: Type.STRING },
-              totalPrice: { type: Type.NUMBER },
-              sharedBy: { 
-                type: Type.ARRAY,
-                items: { type: Type.STRING }
-              }
-            }
-          }
-        }
-      }
     });
 
-    return JSON.parse(response.text || '[]');
+    const responseText = response.text || '[]';
+    
+    // Extract JSON from response (handle markdown code blocks)
+    let jsonStr = responseText;
+    const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1].trim();
+    } else {
+      // Try to find JSON array directly
+      const arrayMatch = responseText.match(/\[[\s\S]*\]/);
+      if (arrayMatch) {
+        jsonStr = arrayMatch[0];
+      }
+    }
+    
+    const parsed = JSON.parse(jsonStr);
+    console.log("AI parsed items:", parsed);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
-    console.error("Gemini parsing error:", error);
+    console.error("Gemma parsing error:", error);
     return [];
   }
 };
 
 export const suggestRecipe = async (ingredients: string[]) => {
-  if (!apiKey) return "Please provide an API Key to get recipe suggestions.";
+  if (!apiKey) return "Please configure API Key for recipe suggestions.";
   
   try {
     const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `I have these ingredients in my fridge: ${ingredients.join(', ')}. 
-        Suggest one simple recipe title and a very short description (1 sentence) I can make.`,
+        model: MODEL_NAME,
+        contents: `I have these ingredients: ${ingredients.join(', ')}. 
+Suggest ONE simple recipe in this exact format:
+**Recipe Name** - Brief one-sentence description.`,
     });
-    return response.text;
+    return response.text || "Could not generate recipe.";
   } catch (error) {
+    console.error("Recipe suggestion error:", error);
     return "Could not generate recipe.";
   }
 }

@@ -139,6 +139,30 @@ const App: React.FC = () => {
     await GroceryService.updateItemStatus(id, status);
   };
 
+  const handlePartialUse = async (item: GroceryItem, usedQuantity: number) => {
+    // Create a new "used" item with the used quantity
+    const usedItem: GroceryItem = {
+      ...item,
+      id: Date.now().toString(),
+      quantity: usedQuantity,
+      totalPrice: item.unitPrice * usedQuantity,
+      status: ItemStatus.USED,
+      dateAdded: new Date().toISOString()
+    };
+    
+    // Update the original item with remaining quantity
+    const remainingQuantity = item.quantity - usedQuantity;
+    const updatedOriginal: GroceryItem = {
+      ...item,
+      quantity: remainingQuantity,
+      totalPrice: item.unitPrice * remainingQuantity
+    };
+    
+    // Save both items
+    await GroceryService.saveItem(usedItem);
+    await GroceryService.updateItemDetails(updatedOriginal);
+  };
+
   const handleDelete = async (id: string) => {
     if(window.confirm("Are you sure you want to delete this record?")) {
       await GroceryService.deleteItem(id);
@@ -217,21 +241,28 @@ const App: React.FC = () => {
       )}
       
       {/* Mobile Header */}
-      <div className={`md:hidden bg-white p-4 flex justify-between items-center shadow-sm sticky ${!isOnline || showUpdatePrompt ? 'top-10' : 'top-0'} z-10 border-b border-gray-200`}>
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold text-blue-700">GroceSplit</h1>
-          {isOnline ? (
-            <Wifi className="w-4 h-4 text-green-500" />
-          ) : (
-            <WifiOff className="w-4 h-4 text-yellow-500" />
-          )}
+      <div className={`md:hidden bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 flex justify-between items-center sticky ${!isOnline || showUpdatePrompt ? 'top-10' : 'top-0'} z-10 safe-area-top`}>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            <span className="text-lg">🥦</span>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white">GroceSplit</h1>
+            <div className="flex items-center gap-1">
+              {isOnline ? (
+                <><Wifi className="w-3 h-3 text-green-300" /><span className="text-[10px] text-blue-100">Synced</span></>
+              ) : (
+                <><WifiOff className="w-3 h-3 text-yellow-300" /><span className="text-[10px] text-blue-100">Offline</span></>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2">
-            <button className="p-2 bg-blue-50 text-blue-600 rounded-full text-xs font-bold w-8 h-8 flex items-center justify-center">
+        <div className="flex items-center gap-2">
+            <button 
+              className={`w-10 h-10 rounded-full ${currentUser.avatarColor} text-white font-bold text-sm flex items-center justify-center shadow-lg border-2 border-white/30`}
+              onClick={() => setUserModalOpen(true)}
+            >
                 {currentUser.name[0]}
-            </button>
-            <button className="p-2" onClick={() => setUserModalOpen(true)}>
-                <UserIcon className="w-6 h-6 text-gray-600" />
             </button>
         </div>
       </div>
@@ -308,20 +339,20 @@ const App: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-5xl mx-auto w-full">
+      <main className="flex-1 px-4 pt-4 pb-28 md:p-8 md:pb-8 overflow-y-auto max-w-5xl mx-auto w-full">
         
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
               {activeTab === 'dashboard' ? `Hello, ${currentUser.name}!` : 'Grocery Inventory'}
             </h2>
-            <p className="text-gray-500">
+            <p className="text-sm text-gray-500">
                {activeTab === 'dashboard' ? 'Here is what you owe for groceries.' : 'Manage fridge items and usage.'}
             </p>
           </div>
-          <Button onClick={() => setModalOpen(true)} className="shadow-sm">
+          <Button onClick={() => setModalOpen(true)} className="shadow-sm hidden md:flex">
             <Plus className="w-5 h-5" />
-            <span className="hidden sm:inline">Add Item</span>
+            <span>Add Item</span>
           </Button>
         </div>
 
@@ -336,6 +367,7 @@ const App: React.FC = () => {
                onStatusChange={handleStatusChange} 
                onDelete={handleDelete}
                onEdit={handleEdit}
+               onPartialUse={handlePartialUse}
                recipeSuggestion={recipeText}
                onRefreshRecipe={() => updateRecipeSuggestion(items)}
              />
@@ -345,33 +377,48 @@ const App: React.FC = () => {
       </main>
 
       {/* Mobile Tab Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t p-2 flex justify-around z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button 
-          onClick={() => setActiveTab('dashboard')}
-          className={`flex flex-col items-center p-2 rounded ${activeTab === 'dashboard' ? 'text-blue-600 bg-blue-50' : 'text-gray-500'}`}
-        >
-          <LayoutGrid className="w-6 h-6" />
-          <span className="text-xs mt-1 font-medium">Home</span>
-        </button>
-        <div className="-mt-8">
-           <Button onClick={() => setModalOpen(true)} className="rounded-full w-14 h-14 !p-0 shadow-lg border-4 border-gray-100 bg-blue-600 hover:bg-blue-700">
-             <Plus className="w-6 h-6" />
-           </Button>
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 pb-safe z-20 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)]">
+        <div className="flex justify-evenly items-center w-full">
+          <button 
+            onClick={() => setActiveTab('dashboard')}
+            className={`flex-1 flex flex-col items-center py-3 transition-all ${activeTab === 'dashboard' ? 'text-blue-600' : 'text-gray-400'}`}
+          >
+            <div className={`p-2 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-blue-100' : ''}`}>
+              <LayoutGrid className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] mt-1 font-semibold">Home</span>
+          </button>
+          
+          <button 
+            onClick={() => setModalOpen(true)}
+            className="flex-1 flex flex-col items-center py-3 text-blue-600 transition-all"
+          >
+            <div className="p-2 rounded-xl bg-blue-600 text-white">
+              <Plus className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] mt-1 font-semibold">Add</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('list')}
+            className={`flex-1 flex flex-col items-center py-3 transition-all ${activeTab === 'list' ? 'text-blue-600' : 'text-gray-400'}`}
+          >
+            <div className={`p-2 rounded-xl transition-all ${activeTab === 'list' ? 'bg-blue-100' : ''}`}>
+              <ListIcon className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] mt-1 font-semibold">List</span>
+          </button>
+          
+          <button 
+            onClick={handleLogout}
+            className="flex-1 flex flex-col items-center py-3 text-gray-400 active:text-red-500 transition-colors"
+          >
+            <div className="p-2">
+              <LogOut className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] mt-1 font-semibold">Exit</span>
+          </button>
         </div>
-        <button 
-           onClick={() => setActiveTab('list')}
-           className={`flex flex-col items-center p-2 rounded ${activeTab === 'list' ? 'text-blue-600 bg-blue-50' : 'text-gray-500'}`}
-        >
-          <ListIcon className="w-6 h-6" />
-          <span className="text-xs mt-1 font-medium">List</span>
-        </button>
-        <button 
-           onClick={handleLogout}
-           className={`flex flex-col items-center p-2 rounded text-red-400`}
-        >
-          <LogOut className="w-6 h-6" />
-          <span className="text-xs mt-1 font-medium">Exit</span>
-        </button>
       </div>
 
       {isModalOpen && (

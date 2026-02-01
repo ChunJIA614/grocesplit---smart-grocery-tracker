@@ -1,4 +1,7 @@
 {
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "hosting": {
     "public": "dist",
     "ignore": [
@@ -6,7 +9,29 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "cleanUrls": true,
+    "trailingSlash": false,
     "rewrites": [
+      {
+        "source": "!/assets/**",
+        "destination": "/index.html"
+      },
+      {
+        "source": "!**/*.png",
+        "destination": "/index.html"
+      },
+      {
+        "source": "!**/*.ico",
+        "destination": "/index.html"
+      },
+      {
+        "source": "!**/*.json",
+        "destination": "/index.html"
+      },
+      {
+        "source": "!**/*.webmanifest",
+        "destination": "/index.html"
+      },
       {
         "source": "**",
         "destination": "/index.html"
@@ -19,6 +44,28 @@
           {
             "key": "Cache-Control",
             "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "**/*.png",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "image/png"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000"
+          }
+        ]
+      },
+      {
+        "source": "**/*.ico",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "image/x-icon"
           }
         ]
       },

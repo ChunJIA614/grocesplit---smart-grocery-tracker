@@ -10,38 +10,41 @@ interface Props {
 
 export const LoginScreen: React.FC<Props> = ({ users, onSelectUser, onManageUsers }) => {
   return (
-    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
+    <div className="fixed inset-0 bg-gradient-to-b from-blue-600 via-blue-600 to-blue-700 flex flex-col items-center justify-center p-6 safe-area-top">
        {/* Logo Section */}
-       <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-             <span className="text-4xl">🥦</span>
+       <div className="text-center mb-8">
+          <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-700/30 border border-white/20">
+             <span className="text-5xl">🥦</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">GroceSplit</h1>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">GroceSplit</h1>
+          <p className="text-blue-100 text-sm mt-1">Who's shopping today?</p>
        </div>
 
        {/* User Grid */}
-       <div className="w-full max-w-lg grid grid-cols-2 gap-4 mb-12">
-          {users.map(user => (
-            <button
-              key={user.id}
-              onClick={() => onSelectUser(user)}
-              className="flex flex-col items-center justify-center p-6 rounded-2xl bg-gray-50 border-2 border-transparent hover:border-blue-500 hover:bg-blue-50 hover:shadow-md transition-all group aspect-[4/3]"
-            >
-              <div className={`w-14 h-14 rounded-full ${user.avatarColor} text-white flex items-center justify-center text-xl font-bold mb-3 shadow-sm group-hover:scale-110 transition-transform`}>
-                 {user.name[0]?.toUpperCase()}
-              </div>
-              <span className="font-semibold text-gray-800 group-hover:text-blue-700">{user.name}</span>
-            </button>
-          ))}
+       <div className="w-full max-w-sm bg-white/10 backdrop-blur-sm rounded-3xl p-4 border border-white/20">
+         <div className="grid grid-cols-2 gap-3">
+            {users.map(user => (
+              <button
+                key={user.id}
+                onClick={() => onSelectUser(user)}
+                className="flex flex-col items-center justify-center p-5 rounded-2xl bg-white/90 backdrop-blur-sm hover:bg-white active:scale-95 transition-all shadow-sm"
+              >
+                <div className={`w-14 h-14 rounded-2xl ${user.avatarColor} text-white flex items-center justify-center text-xl font-bold mb-2 shadow-md`}>
+                   {user.name[0]?.toUpperCase()}
+                </div>
+                <span className="font-semibold text-gray-800 text-sm">{user.name}</span>
+              </button>
+            ))}
+         </div>
        </div>
        
        {/* Footer Action */}
         <button 
             onClick={onManageUsers}
-            className="flex items-center gap-2 text-gray-400 hover:text-blue-600 transition-colors text-sm font-medium px-4 py-2 rounded-full hover:bg-gray-50"
+            className="mt-8 flex items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium px-4 py-2 rounded-full hover:bg-white/10"
         >
             <Users className="w-4 h-4" />
-            Manage Household Members
+            Manage Members
         </button>
     </div>
   );

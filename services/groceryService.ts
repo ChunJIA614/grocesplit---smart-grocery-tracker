@@ -28,49 +28,68 @@ export const GroceryService = {
   // --- Subscriptions ---
 
   subscribeItems: (onUpdate: Listener<GroceryItem[]>) => {
+    // Always load from localStorage first for immediate display
+    const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
+    const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
+    localItems.forEach(i => { if(!i.paidBy) i.paidBy = []; });
+    onUpdate(localItems);
+    
+    // Listen for localStorage changes (for immediate UI updates)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === ITEMS_STORAGE_KEY && e.newValue) {
+        const parsed: GroceryItem[] = JSON.parse(e.newValue);
+        parsed.forEach(i => { if(!i.paidBy) i.paidBy = []; });
+        onUpdate(parsed);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events (same-window updates)
+    const handleCustomEvent = () => {
+      const data = localStorage.getItem(ITEMS_STORAGE_KEY);
+      const parsed: GroceryItem[] = data ? JSON.parse(data) : [];
+      parsed.forEach(i => { if(!i.paidBy) i.paidBy = []; });
+      onUpdate(parsed);
+    };
+    window.addEventListener('grocesplit_items_updated', handleCustomEvent);
+    
     if (db) {
-      // Firebase Mode
+      // Firebase Mode - will sync with localStorage
+      console.log("Firebase DB available, subscribing to items collection...");
       const q = query(collection(db, 'items'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const items = snapshot.docs.map(doc => {
-            const data = doc.data() as GroceryItem;
-            // Backwards compatibility: ensure paidBy exists
+        console.log("Firebase items snapshot received, docs count:", snapshot.docs.length);
+        const items = snapshot.docs.map(docSnap => {
+            const data = docSnap.data() as GroceryItem;
             if (!data.paidBy) data.paidBy = [];
             return data;
         });
         items.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
+        
+        // ALWAYS sync Firebase data to localStorage and update UI
+        // This ensures cross-device sync works properly
+        localStorage.setItem(ITEMS_STORAGE_KEY, JSON.stringify(items));
         onUpdate(items);
       }, (error) => {
         console.error("Firebase items subscription error:", error);
-        // Fallback to local storage on error
-        const data = localStorage.getItem(ITEMS_STORAGE_KEY);
-        const parsed: GroceryItem[] = data ? JSON.parse(data) : [];
-        parsed.forEach(i => { if(!i.paidBy) i.paidBy = []; });
-        onUpdate(parsed);
       });
-      return unsubscribe;
-    } else {
-      // LocalStorage Mode
-      const loadLocal = () => {
-        const data = localStorage.getItem(ITEMS_STORAGE_KEY);
-        const parsed: GroceryItem[] = data ? JSON.parse(data) : [];
-        // Backwards compatibility
-        parsed.forEach(i => { if(!i.paidBy) i.paidBy = []; });
-        onUpdate(parsed);
-      };
       
-      loadLocal(); 
-
-      const handler = (e: StorageEvent) => {
-        if (e.key === ITEMS_STORAGE_KEY) loadLocal();
+      return () => {
+        unsubscribe();
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('grocesplit_items_updated', handleCustomEvent);
       };
-      window.addEventListener('storage', handler);
-      return () => window.removeEventListener('storage', handler);
+    } else {
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('grocesplit_items_updated', handleCustomEvent);
+      };
     }
   },
 
   subscribeUsers: (onUpdate: Listener<User[]>) => {
     if (db) {
+      console.log("Firebase DB available, subscribing to users collection...");
       const q = query(collection(db, 'users'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const users = snapshot.docs.map(doc => doc.data() as User);
@@ -117,6 +136,9 @@ export const GroceryService = {
 
   _triggerLocalUpdate: (key: string, data: any) => {
     localStorage.setItem(key, JSON.stringify(data));
+    // Dispatch custom event for same-window updates (StorageEvent only fires for other tabs)
+    window.dispatchEvent(new CustomEvent(key === ITEMS_STORAGE_KEY ? 'grocesplit_items_updated' : 'grocesplit_users_updated'));
+    // Also dispatch StorageEvent for other tabs
     window.dispatchEvent(new StorageEvent('storage', { key, newValue: JSON.stringify(data) }));
   },
 
@@ -134,7 +156,7 @@ export const GroceryService = {
     // Ensure paidBy is initialized
     const itemToSave = { ...item, paidBy: item.paidBy || [] };
     
-    // Also save to localStorage as backup
+    // Always save to localStorage first for immediate UI update
     const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
     const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
     const existingIndex = localItems.findIndex(i => i.id === item.id);
@@ -143,11 +165,12 @@ export const GroceryService = {
     } else {
       localItems.unshift(itemToSave);
     }
-    localStorage.setItem(ITEMS_STORAGE_KEY, JSON.stringify(localItems));
+    GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, localItems);
     
     if (db) {
       try {
         await GroceryService._withTimeout(setDoc(doc(db, 'items', item.id), itemToSave));
+        console.log("Item saved to Firebase:", item.id);
       } catch (e) {
         console.warn("Firebase save failed, data saved locally:", e);
       }
@@ -155,15 +178,16 @@ export const GroceryService = {
   },
 
   updateItemDetails: async (item: GroceryItem) => {
-    // Also update localStorage as backup
+    // Always update localStorage first for immediate UI update
     const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
     const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
     const newLocalItems = localItems.map(i => i.id === item.id ? item : i);
-    localStorage.setItem(ITEMS_STORAGE_KEY, JSON.stringify(newLocalItems));
+    GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, newLocalItems);
     
     if (db) {
       try {
         await GroceryService._withTimeout(setDoc(doc(db, 'items', item.id), item, { merge: true }));
+        console.log("Item updated in Firebase:", item.id);
       } catch (e) {
         console.warn("Firebase update failed, data saved locally:", e);
       }
@@ -171,11 +195,11 @@ export const GroceryService = {
   },
 
   updateItemStatus: async (id: string, status: ItemStatus) => {
-    // Update localStorage
+    // Always update localStorage first
     const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
     const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
     const newLocalItems = localItems.map(i => i.id === id ? { ...i, status } : i);
-    localStorage.setItem(ITEMS_STORAGE_KEY, JSON.stringify(newLocalItems));
+    GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, newLocalItems);
     
     if (db) {
       try {
@@ -187,81 +211,99 @@ export const GroceryService = {
   },
 
   markSharePaid: async (itemId: string, userId: string, isPaid: boolean) => {
-    if (db) {
-      // Need to read first to update array safely without overwriting other changes if possible, 
-      // but strictly setDoc merge is okay if we are careful. 
-      // Ideally transaction, but simple read-modify-write for this scale:
-      // However, since we have local state in app usually, we might just pass the new array.
-      // But let's do a transactional update if possible, or simple merge logic here.
-      // Simpler: Fetch, modify, save.
-      const ref = doc(db, 'items', itemId);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const data = snap.data() as GroceryItem;
-        let paidBy = data.paidBy || [];
+    // Update localStorage first for immediate feedback
+    const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
+    const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
+    const newLocalItems = localItems.map(i => {
+      if (i.id === itemId) {
+        let paidBy = i.paidBy || [];
         if (isPaid) {
-          if (!paidBy.includes(userId)) paidBy.push(userId);
+          if (!paidBy.includes(userId)) paidBy = [...paidBy, userId];
         } else {
           paidBy = paidBy.filter(id => id !== userId);
         }
-        await setDoc(ref, { paidBy }, { merge: true });
+        return { ...i, paidBy };
       }
-    } else {
-      const data = localStorage.getItem(ITEMS_STORAGE_KEY);
-      const items: GroceryItem[] = data ? JSON.parse(data) : [];
-      const newItems = items.map(i => {
-        if (i.id === itemId) {
-          let paidBy = i.paidBy || [];
+      return i;
+    });
+    GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, newLocalItems);
+    
+    if (db) {
+      try {
+        const ref = doc(db, 'items', itemId);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data() as GroceryItem;
+          let paidBy = data.paidBy || [];
           if (isPaid) {
-            if (!paidBy.includes(userId)) paidBy = [...paidBy, userId];
+            if (!paidBy.includes(userId)) paidBy.push(userId);
           } else {
             paidBy = paidBy.filter(id => id !== userId);
           }
-          return { ...i, paidBy };
+          await setDoc(ref, { paidBy }, { merge: true });
+          console.log("markSharePaid updated in Firebase:", itemId);
         }
-        return i;
-      });
-      GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, newItems);
+      } catch (e) {
+        console.warn("Firebase markSharePaid failed:", e);
+      }
     }
   },
 
   deleteItem: async (id: string) => {
+    // Always update localStorage first for immediate feedback
+    const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
+    const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
+    const newItems = localItems.filter(i => i.id !== id);
+    GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, newItems);
+    
     if (db) {
-      await deleteDoc(doc(db, 'items', id));
-    } else {
-      const data = localStorage.getItem(ITEMS_STORAGE_KEY);
-      const items: GroceryItem[] = data ? JSON.parse(data) : [];
-      const newItems = items.filter(i => i.id !== id);
-      GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, newItems);
+      try {
+        await deleteDoc(doc(db, 'items', id));
+        console.log("Item deleted from Firebase:", id);
+      } catch (e) {
+        console.warn("Firebase delete failed:", e);
+      }
     }
   },
 
   saveUser: async (user: User) => {
-    if (db) {
-      await setDoc(doc(db, 'users', user.id), user);
+    // Always update localStorage first
+    const localData = localStorage.getItem(USERS_STORAGE_KEY);
+    const localUsers: User[] = localData ? JSON.parse(localData) : DEFAULT_USERS;
+    const index = localUsers.findIndex(u => u.id === user.id);
+    let newUsers;
+    if (index >= 0) {
+      newUsers = [...localUsers];
+      newUsers[index] = user;
     } else {
-      const data = localStorage.getItem(USERS_STORAGE_KEY);
-      const users: User[] = data ? JSON.parse(data) : DEFAULT_USERS;
-      const index = users.findIndex(u => u.id === user.id);
-      let newUsers;
-      if (index >= 0) {
-        newUsers = [...users];
-        newUsers[index] = user;
-      } else {
-        newUsers = [...users, user];
+      newUsers = [...localUsers, user];
+    }
+    GroceryService._triggerLocalUpdate(USERS_STORAGE_KEY, newUsers);
+    
+    if (db) {
+      try {
+        await setDoc(doc(db, 'users', user.id), user);
+        console.log("User saved to Firebase:", user.id);
+      } catch (e) {
+        console.warn("Firebase saveUser failed:", e);
       }
-      GroceryService._triggerLocalUpdate(USERS_STORAGE_KEY, newUsers);
     }
   },
 
   deleteUser: async (id: string) => {
+    // Always update localStorage first
+    const localData = localStorage.getItem(USERS_STORAGE_KEY);
+    const localUsers: User[] = localData ? JSON.parse(localData) : DEFAULT_USERS;
+    const newUsers = localUsers.filter(u => u.id !== id);
+    GroceryService._triggerLocalUpdate(USERS_STORAGE_KEY, newUsers);
+    
     if (db) {
-      await deleteDoc(doc(db, 'users', id));
-    } else {
-      const data = localStorage.getItem(USERS_STORAGE_KEY);
-      const users: User[] = data ? JSON.parse(data) : DEFAULT_USERS;
-      const newUsers = users.filter(u => u.id !== id);
-      GroceryService._triggerLocalUpdate(USERS_STORAGE_KEY, newUsers);
+      try {
+        await deleteDoc(doc(db, 'users', id));
+        console.log("User deleted from Firebase:", id);
+      } catch (e) {
+        console.warn("Firebase deleteUser failed:", e);
+      }
     }
   }
 };

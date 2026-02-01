@@ -67,49 +67,50 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
   const CHART_COLORS = ['#0d6efd', '#6610f2', '#198754', '#ffc107', '#dc3545', '#0dcaf0'];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       
       {/* Current User Summary */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 flex justify-between items-center">
-          <div>
-            <p className="text-blue-100 text-sm font-medium mb-1">My Outstanding Share</p>
-            <h2 className="text-4xl font-bold">${stats.currentUserDebt.toFixed(2)}</h2>
-          </div>
-          <div className={`w-12 h-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm border border-white/30`}>
-             <span className="text-2xl">💰</span>
-          </div>
+      <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-blue-700 rounded-2xl p-5 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+        <div className="relative z-10">
+          <p className="text-blue-100 text-xs font-medium mb-1 uppercase tracking-wider">My Outstanding Share</p>
+          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight">${stats.currentUserDebt.toFixed(2)}</h2>
+          <p className="text-blue-200 text-xs mt-2">{stats.currentUserUnpaidItems.length} unpaid items</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
         {/* Unpaid Items List (Tick Paid) */}
-        <div className="bg-white p-6 rounded shadow-sm border border-gray-200">
-           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-             <CheckCircle2 className="w-5 h-5 text-green-600" />
+        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+           <h3 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
+             <div className="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center">
+               <CheckCircle2 className="w-4 h-4 text-green-600" />
+             </div>
              Tick to Pay
            </h3>
-           <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+           <div className="space-y-2 max-h-80 overflow-y-auto">
              {stats.currentUserUnpaidItems.length === 0 ? (
-               <div className="text-center py-8 text-gray-400 bg-gray-50 rounded border border-dashed">
-                 <p>You're all settled up! 🎉</p>
+               <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                 <span className="text-3xl mb-2 block">🎉</span>
+                 <p className="font-medium">You're all settled up!</p>
                </div>
              ) : (
                stats.currentUserUnpaidItems.map(({ item, amount }) => (
-                 <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-100 hover:border-blue-200 transition-colors">
-                    <div className="min-w-0 flex-1 mr-4">
-                      <p className="font-semibold text-gray-800 truncate">{item.name}</p>
-                      <p className="text-xs text-gray-500">{new Date(item.dateAdded).toLocaleDateString()}</p>
+                 <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl active:bg-gray-100 transition-colors">
+                    <div className="min-w-0 flex-1 mr-3">
+                      <p className="font-semibold text-gray-800 truncate text-sm">{item.name}</p>
+                      <p className="text-[10px] text-gray-400">{new Date(item.dateAdded).toLocaleDateString()}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-bold text-gray-700">${amount.toFixed(2)}</span>
+                      <span className="font-bold text-gray-700 text-sm">${amount.toFixed(2)}</span>
                       <button 
                         onClick={() => handleMarkPaid(item)}
-                        className="w-8 h-8 rounded-full border-2 border-green-500 text-green-500 hover:bg-green-500 hover:text-white flex items-center justify-center transition-all"
+                        className="w-10 h-10 rounded-xl border-2 border-green-500 text-green-500 hover:bg-green-500 hover:text-white active:scale-95 flex items-center justify-center transition-all"
                         title="Mark as Paid"
                       >
-                        <Check className="w-4 h-4" />
+                        <Check className="w-5 h-5" />
                       </button>
                     </div>
                  </div>
@@ -119,10 +120,10 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
         </div>
 
         {/* Debt Overview Chart */}
-        <div className="bg-white p-6 rounded shadow-sm border border-gray-200 flex flex-col">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
           <div className="mb-4">
-              <h3 className="text-lg font-bold text-gray-800">Household Debt</h3>
-              <p className="text-xs text-gray-500">
+              <h3 className="text-base font-bold text-gray-800">Household Debt</h3>
+              <p className="text-xs text-gray-400">
                   Who owes what for consumed items.
               </p>
           </div>

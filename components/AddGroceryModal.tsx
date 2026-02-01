@@ -120,68 +120,70 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded w-full max-w-md shadow-lg overflow-hidden border border-gray-200">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col animate-slide-up">
         
         {/* Header - Bootstrap style */}
-        <div className="bg-gray-100 p-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-blue-600" />
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 flex justify-between items-center shrink-0">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
+              <ShoppingBag className="w-4 h-4 text-white" />
+            </div>
             {initialItem ? 'Edit Item' : 'Add Groceries'}
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tabs - Only show if adding new */}
         {!initialItem && (
-          <div className="flex p-2 gap-2 bg-white border-b border-gray-200">
+          <div className="flex p-3 gap-2 bg-gray-50 border-b border-gray-100 shrink-0">
             <button 
               onClick={() => setMode('manual')}
-              className={`flex-1 py-2 text-sm font-medium rounded transition-colors ${mode === 'manual' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all ${mode === 'manual' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
             >
-              Manual Entry
+              ✍️ Manual
             </button>
             <button 
               onClick={() => setMode('ai')}
-              className={`flex-1 py-2 text-sm font-medium rounded transition-colors flex items-center justify-center gap-2 ${mode === 'ai' ? 'bg-purple-50 text-purple-700 border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 ${mode === 'ai' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500'}`}
             >
               <Sparkles className="w-4 h-4" />
-              AI Smart Paste
+              AI Paste
             </button>
           </div>
         )}
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {mode === 'manual' ? (
             <form onSubmit={handleManualSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Item Name</label>
                 <input 
                   autoFocus
                   type="text" 
                   value={name} onChange={e => setName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" 
                   placeholder="e.g. Organic Eggs"
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Quantity</label>
                   <div className="flex">
                     <input 
                       type="number" 
                       value={qty} onChange={e => setQty(e.target.value)}
-                      className="w-2/3 px-3 py-2 border border-gray-300 rounded-l focus:ring-2 focus:ring-blue-500" 
+                      className="w-full px-4 py-3 border border-gray-200 rounded-l-xl focus:ring-2 focus:ring-blue-500 text-base" 
                       placeholder="1"
                     />
                      <select 
                       value={unit} onChange={e => setUnit(e.target.value)}
-                      className="w-1/3 px-2 py-2 border-y border-r border-gray-300 rounded-r bg-gray-50 text-sm"
+                      className="px-3 py-3 border-y border-r border-gray-200 rounded-r-xl bg-gray-50 text-sm font-medium"
                     >
                       <option value="pcs">pcs</option>
                       <option value="kg">kg</option>
@@ -191,12 +193,12 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Price ($)</label>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Total Price ($)</label>
                   <input 
                     type="number" 
                     step="0.01"
                     value={price} onChange={e => setPrice(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" 
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-base" 
                     placeholder="0.00"
                     required
                   />
@@ -204,8 +206,8 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <Users className="w-4 h-4" />
+                <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5" />
                   Split Cost With
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -214,48 +216,53 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
                       key={user.id}
                       type="button"
                       onClick={() => toggleUser(user.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
                         selectedUsers.includes(user.id)
-                        ? `bg-blue-600 text-white border-blue-600` // Bootstrap selected style
-                        : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                        ? `${user.avatarColor} text-white shadow-sm`
+                        : 'bg-gray-100 text-gray-600'
                       }`}
                     >
                       {user.name}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Per person: <span className="font-semibold text-blue-600">${price && selectedUsers.length ? (Number(price) / selectedUsers.length).toFixed(2) : '0.00'}</span>
-                </p>
+                <div className="mt-3 p-3 bg-blue-50 rounded-xl">
+                  <p className="text-xs text-blue-600 font-medium">
+                    Per person: <span className="text-lg font-bold">${price && selectedUsers.length ? (Number(price) / selectedUsers.length).toFixed(2) : '0.00'}</span>
+                  </p>
+                </div>
               </div>
 
-              <div className="pt-2 border-t mt-4 flex justify-end gap-2">
-                <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+              <div className="pt-3 flex gap-2">
+                <Button type="button" variant="secondary" onClick={onClose} disabled={saving} className="flex-1 justify-center py-3">
                    Cancel
                 </Button>
-                <Button type="submit" isLoading={saving}>
+                <Button type="submit" isLoading={saving} className="flex-1 justify-center py-3">
                   {initialItem ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  {initialItem ? 'Save Changes' : 'Add Item'}
+                  {initialItem ? 'Save' : 'Add'}
                 </Button>
               </div>
             </form>
           ) : (
             <div className="space-y-4">
-              <div className="bg-purple-50 p-4 rounded border border-purple-200">
-                <h3 className="text-sm font-semibold text-purple-900 mb-1">How this works</h3>
-                <p className="text-xs text-purple-800">
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                <h3 className="text-sm font-semibold text-purple-900 mb-1 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  How this works
+                </h3>
+                <p className="text-xs text-purple-700">
                   Paste your receipt text. Gemini will detect items, prices, and suggest splits.
                 </p>
               </div>
               <textarea
                 value={aiInput}
                 onChange={e => setAiInput(e.target.value)}
-                className="w-full h-32 p-3 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 text-sm"
-                placeholder="Type details here..."
+                className="w-full h-36 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 text-base resize-none"
+                placeholder="Type or paste receipt details here..."
               ></textarea>
               <Button 
                 onClick={handleAiSubmit} 
-                className="w-full justify-center bg-purple-600 hover:bg-purple-700 border-purple-600"
+                className="w-full justify-center py-3 bg-purple-600 hover:bg-purple-700 border-purple-600"
                 isLoading={loading}
               >
                 <Sparkles className="w-4 h-4" />
