@@ -73,14 +73,22 @@ const App: React.FC = () => {
     // Try to recover user session from localstorage (simple persistence)
     const savedUserId = localStorage.getItem('grocesplit_current_user_id');
 
+    // Set a timeout to stop loading even if Firebase doesn't respond
+    const loadingTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 3000); // 3 second timeout
+
     const unsubItems = GroceryService.subscribeItems((newItems) => {
       setItems(newItems);
       updateRecipeSuggestion(newItems);
+      clearTimeout(loadingTimeout);
       setLoading(false);
     });
 
     const unsubUsers = GroceryService.subscribeUsers((newUsers) => {
       setUsers(newUsers);
+      clearTimeout(loadingTimeout);
+      setLoading(false);
       
       // Restore user if exists in new list
       if (savedUserId && !currentUser) {
@@ -90,6 +98,7 @@ const App: React.FC = () => {
     });
 
     return () => {
+      clearTimeout(loadingTimeout);
       unsubItems();
       unsubUsers();
     };

@@ -44,35 +44,38 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
     if (!name || !price) return;
     setSaving(true);
 
-    try {
-      const itemData: GroceryItem = {
-        id: initialItem ? initialItem.id : Date.now().toString(),
-        name,
-        quantity: Number(qty) || 1,
-        unit,
-        totalPrice: Number(price),
-        unitPrice: Number(price) / (Number(qty) || 1),
-        status: initialItem ? initialItem.status : ItemStatus.FRIDGE, // Preserve status if editing
-        sharedBy: selectedUsers,
-        paidBy: initialItem ? (initialItem.paidBy || []) : [], // Preserve payment status or init empty
-        dateAdded: initialItem ? initialItem.dateAdded : new Date().toISOString()
-      };
+    const itemData: GroceryItem = {
+      id: initialItem ? initialItem.id : Date.now().toString(),
+      name,
+      quantity: Number(qty) || 1,
+      unit,
+      totalPrice: Number(price),
+      unitPrice: Number(price) / (Number(qty) || 1),
+      status: initialItem ? initialItem.status : ItemStatus.FRIDGE, // Preserve status if editing
+      sharedBy: selectedUsers,
+      paidBy: initialItem ? (initialItem.paidBy || []) : [], // Preserve payment status or init empty
+      dateAdded: initialItem ? initialItem.dateAdded : new Date().toISOString()
+    };
 
+    try {
       if (initialItem) {
         await GroceryService.updateItemDetails(itemData);
       } else {
         await GroceryService.saveItem(itemData);
       }
-      
-      onClose();
-    } finally {
-      setSaving(false);
+    } catch (error) {
+      console.error("Error saving item:", error);
     }
+    
+    // Always close and reset saving state
+    setSaving(false);
+    onClose();
   };
 
   const handleAiSubmit = async () => {
     if (!aiInput) return;
     setLoading(true);
+    
     try {
       const parsedItems = await parseGroceryText(aiInput, users);
       
@@ -95,16 +98,17 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
         } as GroceryItem;
       });
 
-      // Save sequentially to avoid race conditions in some dbs, or Promise.all
+      // Save all items
       await Promise.all(itemsToAdd.map(item => GroceryService.saveItem(item)));
       
-      onClose();
-
     } catch (e) {
+      console.error("AI parsing error:", e);
       alert("Failed to parse. Please try again or use manual mode.");
-    } finally {
-      setLoading(false);
     }
+    
+    // Always close and reset loading state
+    setLoading(false);
+    onClose();
   };
 
   const toggleUser = (userId: string) => {
