@@ -113,18 +113,6 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
         </div>
       </div>
 
-      {/* Clear All Outstanding Button */}
-      {stats.totalOutstanding > 0 && (
-        <button
-          onClick={handleClearAllOutstanding}
-          disabled={isClearing}
-          className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-md shadow-green-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          <Banknote className="w-5 h-5" />
-          {isClearing ? 'Clearing...' : `Clear All Outstanding ($${stats.totalOutstanding.toFixed(2)})`}
-        </button>
-      )}
-
       {/* Clear My Outstanding Button */}
       {stats.currentUserDebt > 0 && (
         <button
