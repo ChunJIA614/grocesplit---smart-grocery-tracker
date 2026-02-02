@@ -70,12 +70,14 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
   };
 
   const handleClearAllOutstanding = async () => {
-    if (stats.totalOutstanding <= 0) return;
-    if (!confirm('Are you sure you want to clear all outstanding payments for everyone?')) return;
-    
+    if (stats.currentUserDebt <= 0) return;
+    if (!confirm('Are you sure you want to clear all your outstanding payments?')) return;
+
     setIsClearing(true);
     try {
-      await GroceryService.clearAllOutstandingPayments();
+      for (const { item } of stats.currentUserUnpaidItems) {
+        await GroceryService.markSharePaid(item.id, currentUser.id, true);
+      }
     } finally {
       setIsClearing(false);
     }
