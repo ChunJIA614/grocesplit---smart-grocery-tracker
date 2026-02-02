@@ -241,7 +241,7 @@ const App: React.FC = () => {
       )}
       
       {/* Mobile Header */}
-      <div className={`md:hidden bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 flex justify-between items-center sticky ${!isOnline || showUpdatePrompt ? 'top-10' : 'top-0'} z-10 safe-area-top`}>
+      <div className={`md:hidden bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 flex justify-between items-center sticky ${!isOnline || showUpdatePrompt ? 'top-10' : 'top-0'} z-50 safe-area-top`}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
             <span className="text-lg">🥦</span>
