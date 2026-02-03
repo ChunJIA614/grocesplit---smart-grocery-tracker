@@ -136,29 +136,59 @@ const App: React.FC = () => {
   };
 
   const handleStatusChange = async (id: string, status: ItemStatus) => {
+    const target = items.find(i => i.id === id);
+    if (!target) return;
+
+    if (status === ItemStatus.FRIDGE) {
+      await GroceryService.updateItemDetails({
+        ...target,
+        status,
+        sharedBy: [],
+        paidBy: []
+      });
+      return;
+    }
+
     await GroceryService.updateItemStatus(id, status);
   };
 
-  const handlePartialUse = async (item: GroceryItem, usedQuantity: number) => {
-    // Create a new "used" item with the used quantity
+  const handleUseItem = async (item: GroceryItem, usedQuantity: number, sharedBy: string[]) => {
+    if (usedQuantity <= 0) return;
+
+    const selectedUsers = sharedBy.length > 0 ? sharedBy : [];
+
+    if (usedQuantity >= item.quantity) {
+      const updatedItem: GroceryItem = {
+        ...item,
+        status: ItemStatus.USED,
+        sharedBy: selectedUsers,
+        paidBy: []
+      };
+      await GroceryService.updateItemDetails(updatedItem);
+      return;
+    }
+
     const usedItem: GroceryItem = {
       ...item,
       id: Date.now().toString(),
       quantity: usedQuantity,
       totalPrice: item.unitPrice * usedQuantity,
       status: ItemStatus.USED,
+      sharedBy: selectedUsers,
+      paidBy: [],
       dateAdded: new Date().toISOString()
     };
-    
-    // Update the original item with remaining quantity
+
     const remainingQuantity = item.quantity - usedQuantity;
     const updatedOriginal: GroceryItem = {
       ...item,
       quantity: remainingQuantity,
-      totalPrice: item.unitPrice * remainingQuantity
+      totalPrice: item.unitPrice * remainingQuantity,
+      status: ItemStatus.FRIDGE,
+      sharedBy: [],
+      paidBy: []
     };
-    
-    // Save both items
+
     await GroceryService.saveItem(usedItem);
     await GroceryService.updateItemDetails(updatedOriginal);
   };
@@ -367,7 +397,7 @@ const App: React.FC = () => {
                onStatusChange={handleStatusChange} 
                onDelete={handleDelete}
                onEdit={handleEdit}
-               onPartialUse={handlePartialUse}
+               onUseItem={handleUseItem}
                recipeSuggestion={recipeText}
                onRefreshRecipe={() => updateRecipeSuggestion(items)}
              />

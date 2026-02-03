@@ -8,15 +8,16 @@ interface Props {
   onStatusChange: (id: string, status: ItemStatus) => void;
   onDelete: (id: string) => void;
   onEdit: (item: GroceryItem) => void;
-  onPartialUse?: (item: GroceryItem, usedQuantity: number) => void;
+  onUseItem: (item: GroceryItem, usedQuantity: number, sharedBy: string[]) => void;
   onRefreshRecipe?: () => void;
   recipeSuggestion?: string;
 }
 
-export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onDelete, onEdit, onPartialUse, recipeSuggestion, onRefreshRecipe }) => {
+export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onDelete, onEdit, onUseItem, recipeSuggestion, onRefreshRecipe }) => {
   const [filter, setFilter] = useState<'ALL' | 'FRIDGE' | 'USED'>('FRIDGE');
   const [useModalItem, setUseModalItem] = useState<GroceryItem | null>(null);
   const [useQuantity, setUseQuantity] = useState(1);
+  const [useSelectedUsers, setUseSelectedUsers] = useState<string[]>([]);
 
   const filteredItems = items.filter(item => {
     if (filter === 'ALL') return true;
@@ -26,6 +27,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
   const openUseModal = (item: GroceryItem) => {
     setUseModalItem(item);
     setUseQuantity(item.quantity); // Default to full quantity
+    setUseSelectedUsers(users.map(u => u.id));
   };
 
   const exportToPDF = () => {
@@ -130,16 +132,13 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
 
   const handleConfirmUse = () => {
     if (!useModalItem) return;
-    
-    if (useQuantity >= useModalItem.quantity) {
-      // Use all - just mark as used
-      onStatusChange(useModalItem.id, ItemStatus.USED);
-    } else if (onPartialUse && useQuantity > 0) {
-      // Partial use
-      onPartialUse(useModalItem, useQuantity);
-    }
+
+    if (useSelectedUsers.length === 0 || useQuantity <= 0) return;
+
+    onUseItem(useModalItem, useQuantity, useSelectedUsers);
     setUseModalItem(null);
     setUseQuantity(1);
+    setUseSelectedUsers([]);
   };
 
   return (
@@ -363,10 +362,41 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                 </div>
               )}
             </div>
+
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Split Cost With</label>
+              <div className="flex flex-wrap gap-2">
+                {users.map(user => (
+                  <button
+                    key={user.id}
+                    type="button"
+                    onClick={() => setUseSelectedUsers(prev => prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id])}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
+                      useSelectedUsers.includes(user.id)
+                        ? `${user.avatarColor} text-white shadow-sm`
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {user.name}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                Per person: <span className="font-bold text-gray-700">${useSelectedUsers.length ? ((useModalItem.unitPrice * useQuantity) / useSelectedUsers.length).toFixed(2) : '0.00'}</span>
+              </div>
+              {useSelectedUsers.length === 0 && (
+                <div className="mt-2 text-xs text-red-500">Select at least one person.</div>
+              )}
+            </div>
             
             <button
               onClick={handleConfirmUse}
-              className="w-full py-3 rounded-xl bg-green-600 text-white font-semibold flex items-center justify-center gap-2 active:bg-green-700 transition-colors"
+              disabled={useSelectedUsers.length === 0}
+              className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors ${
+                useSelectedUsers.length === 0
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-green-600 text-white active:bg-green-700'
+              }`}
             >
               <Check className="w-5 h-5" />
               Mark as Used

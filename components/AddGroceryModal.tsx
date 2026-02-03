@@ -22,7 +22,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
   const [qty, setQty] = useState('');
   const [unit, setUnit] = useState('pcs');
   const [price, setPrice] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>(users.map(u => u.id));
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
   // Initialize form if editing
   useEffect(() => {
@@ -32,7 +32,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
       setQty(initialItem.quantity.toString());
       setUnit(initialItem.unit);
       setPrice(initialItem.totalPrice.toString());
-      setSelectedUsers(initialItem.sharedBy);
+      setSelectedUsers(initialItem.status === ItemStatus.USED ? initialItem.sharedBy : []);
     }
   }, [initialItem]);
 
@@ -52,7 +52,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
       totalPrice: Number(price),
       unitPrice: Number(price) / (Number(qty) || 1),
       status: initialItem ? initialItem.status : ItemStatus.FRIDGE, // Preserve status if editing
-      sharedBy: selectedUsers,
+      sharedBy: initialItem && initialItem.status === ItemStatus.USED ? selectedUsers : [],
       paidBy: initialItem ? (initialItem.paidBy || []) : [], // Preserve payment status or init empty
       dateAdded: initialItem ? initialItem.dateAdded : new Date().toISOString()
     };
@@ -80,10 +80,6 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
       const parsedItems = await parseGroceryText(aiInput, users);
       
       const itemsToAdd: GroceryItem[] = parsedItems.map((pItem: any, idx: number) => {
-        const sharedIds = pItem.sharedBy && Array.isArray(pItem.sharedBy) 
-          ? pItem.sharedBy.map((name: string) => users.find(u => u.name.toLowerCase() === name.toLowerCase())?.id).filter(Boolean)
-          : users.map(u => u.id); 
-
         return {
           id: (Date.now() + idx).toString(),
           name: pItem.name || 'Unknown Item',
@@ -92,7 +88,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
           totalPrice: pItem.totalPrice || 0,
           unitPrice: (pItem.totalPrice || 0) / (pItem.quantity || 1),
           status: ItemStatus.FRIDGE,
-          sharedBy: sharedIds.length > 0 ? sharedIds : users.map(u => u.id),
+          sharedBy: [],
           paidBy: [],
           dateAdded: new Date().toISOString()
         } as GroceryItem;
@@ -205,33 +201,30 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide flex items-center gap-2">
-                  <Users className="w-3.5 h-3.5" />
-                  Split Cost With
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {users.map(user => (
-                    <button
-                      key={user.id}
-                      type="button"
-                      onClick={() => toggleUser(user.id)}
-                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
-                        selectedUsers.includes(user.id)
-                        ? `${user.avatarColor} text-white shadow-sm`
-                        : 'bg-gray-100 text-gray-600'
-                      }`}
-                    >
-                      {user.name}
-                    </button>
-                  ))}
+              {initialItem?.status === ItemStatus.USED && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5" />
+                    Split Cost With
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {users.map(user => (
+                      <button
+                        key={user.id}
+                        type="button"
+                        onClick={() => toggleUser(user.id)}
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
+                          selectedUsers.includes(user.id)
+                          ? `${user.avatarColor} text-white shadow-sm`
+                          : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {user.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="mt-3 p-3 bg-blue-50 rounded-xl">
-                  <p className="text-xs text-blue-600 font-medium">
-                    Per person: <span className="text-lg font-bold">${price && selectedUsers.length ? (Number(price) / selectedUsers.length).toFixed(2) : '0.00'}</span>
-                  </p>
-                </div>
-              </div>
+              )}
 
               <div className="pt-3 flex gap-2">
                 <Button type="button" variant="secondary" onClick={onClose} disabled={saving} className="flex-1 justify-center py-3">
