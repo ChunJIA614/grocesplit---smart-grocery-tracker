@@ -47,8 +47,12 @@ export const AircondService = {
     // Listen for localStorage changes (for immediate UI updates in same/different windows)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === AIRCOND_STORAGE_KEY && e.newValue) {
-        const parsed: AircondUsage[] = JSON.parse(e.newValue);
-        onUpdate(parsed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        try {
+          const parsed: AircondUsage[] = JSON.parse(e.newValue);
+          onUpdate(parsed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        } catch (error) {
+          console.warn('Invalid aircond storage event payload ignored.', error);
+        }
       }
     };
     window.addEventListener('storage', handleStorageChange);
@@ -102,8 +106,7 @@ export const AircondService = {
       try {
         await setDoc(doc(db, 'aircondUsage', entry.id), entry);
       } catch (error) {
-        console.error('Failed to save aircond usage to Firestore:', error);
-        throw error;
+        console.warn('Saved aircond usage locally, but Firestore sync failed:', error);
       }
     }
   },
@@ -119,8 +122,7 @@ export const AircondService = {
       try {
         await deleteDoc(doc(db, 'aircondUsage', id));
       } catch (error) {
-        console.error('Failed to delete aircond usage from Firestore:', error);
-        throw error;
+        console.warn('Deleted aircond usage locally, but Firestore sync failed:', error);
       }
     }
   }

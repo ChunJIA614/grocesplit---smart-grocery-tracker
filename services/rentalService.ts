@@ -47,8 +47,12 @@ export const RentalService = {
     // Listen for localStorage changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === RENTAL_STORAGE_KEY && e.newValue) {
-        const parsed: DormExpense[] = JSON.parse(e.newValue);
-        onUpdate(parsed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        try {
+          const parsed: DormExpense[] = JSON.parse(e.newValue);
+          onUpdate(parsed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        } catch (error) {
+          console.warn('Invalid rental storage event payload ignored.', error);
+        }
       }
     };
     window.addEventListener('storage', handleStorageChange);
@@ -102,8 +106,7 @@ export const RentalService = {
       try {
         await setDoc(doc(db, 'rentalExpenses', entry.id), entry);
       } catch (error) {
-        console.error('Failed to save rental expense to Firestore:', error);
-        throw error;
+        console.warn('Saved rental expense locally, but Firestore sync failed:', error);
       }
     }
   },
@@ -119,8 +122,7 @@ export const RentalService = {
       try {
         await deleteDoc(doc(db, 'rentalExpenses', id));
       } catch (error) {
-        console.error('Failed to delete rental expense from Firestore:', error);
-        throw error;
+        console.warn('Deleted rental expense locally, but Firestore sync failed:', error);
       }
     }
   }
