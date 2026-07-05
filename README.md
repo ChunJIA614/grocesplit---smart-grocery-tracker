@@ -2,7 +2,7 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# 🛒 GroceSplit - Smart Grocery Tracker
+# 🛒 dormmate - Smart Grocery Tracker
 
 A modern Progressive Web App (PWA) for tracking and splitting grocery expenses with your household. Features real-time sync across all devices using Firebase and AI-powered grocery parsing with Google Gemini.
 
@@ -46,7 +46,7 @@ A modern Progressive Web App (PWA) for tracking and splitting grocery expenses w
 1. **Clone and install dependencies:**
    ```bash
    git clone <repository-url>
-   cd grocesplit---smart-grocery-tracker
+   cd dormmate---smart-grocery-tracker
    npm install
    ```
 
@@ -177,7 +177,7 @@ npm run preview    # Preview production build locally
 1. **Install Capacitor:**
    ```bash
    npm install @capacitor/core @capacitor/cli @capacitor/android
-   npx cap init GroceSplit com.grocesplit.app
+   npx cap init dormmate com.dormmate.app
    ```
 
 2. **Build and sync:**

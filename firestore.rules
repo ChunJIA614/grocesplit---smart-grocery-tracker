@@ -20,5 +20,15 @@ service cloud.firestore {
     match /pushTokens/{tokenId} {
       allow read, write: if true;
     }
+
+    // Allow read/write access to aircondUsage collection
+    match /aircondUsage/{usageId} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write access to rentalExpenses collection
+    match /rentalExpenses/{expenseId} {
+      allow read, write: if true;
+    }
   }
 }

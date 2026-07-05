@@ -55,3 +55,24 @@ export interface DashboardStats {
   fridgeValue: number;
   topSpender: string;
 }
+
+export interface AircondUsage {
+  id: string;
+  userId: string;
+  userName: string;
+  hours: number;
+  date: string; // ISO date format YYYY-MM-DD
+  notes?: string;
+  createdAt: string; // ISO string
+}
+
+export interface DormExpense {
+  id: string;
+  title: string; // e.g., 'Monthly Rent', 'Internet', 'Water'
+  amount: number;
+  date: string; // YYYY-MM-DD
+  splitWithIds: string[]; // Roommates splitting this expense
+  paidByUserIds: string[]; // Roommates who have paid their share
+  notes?: string;
+  createdAt: string; // ISO string
+}

@@ -18,9 +18,9 @@ const DEFAULT_USERS: User[] = [
   { id: 'u4', name: 'Charlie', avatarColor: 'bg-yellow-500' },
 ];
 
-const ITEMS_STORAGE_KEY = 'grocesplit_items';
-const USERS_STORAGE_KEY = 'grocesplit_users';
-const PAYMENT_HISTORY_STORAGE_KEY = 'grocesplit_payment_history';
+const ITEMS_STORAGE_KEY = 'dormmate_items';
+const USERS_STORAGE_KEY = 'dormmate_users';
+const PAYMENT_HISTORY_STORAGE_KEY = 'dormmate_payment_history';
 
 type Listener<T> = (data: T) => void;
 
@@ -57,7 +57,7 @@ const normalizeHistoryEntry = (entry: PaymentHistoryEntry): PaymentHistoryEntry 
 
 const saveLocalHistory = (entries: PaymentHistoryEntry[]) => {
   localStorage.setItem(PAYMENT_HISTORY_STORAGE_KEY, JSON.stringify(entries));
-  window.dispatchEvent(new CustomEvent('grocesplit_payment_history_updated'));
+  window.dispatchEvent(new CustomEvent('dormmate_payment_history_updated'));
   window.dispatchEvent(new StorageEvent('storage', {
     key: PAYMENT_HISTORY_STORAGE_KEY,
     newValue: JSON.stringify(entries)
@@ -184,7 +184,7 @@ export const GroceryService = {
     const handleCustomEvent = () => {
       onUpdate(loadLocalItems());
     };
-    window.addEventListener('grocesplit_items_updated', handleCustomEvent);
+    window.addEventListener('dormmate_items_updated', handleCustomEvent);
     
     if (db) {
       // Firebase Mode - will sync with localStorage
@@ -209,12 +209,12 @@ export const GroceryService = {
       return () => {
         unsubscribe();
         window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('grocesplit_items_updated', handleCustomEvent);
+        window.removeEventListener('dormmate_items_updated', handleCustomEvent);
       };
     } else {
       return () => {
         window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('grocesplit_items_updated', handleCustomEvent);
+        window.removeEventListener('dormmate_items_updated', handleCustomEvent);
       };
     }
   },
@@ -281,7 +281,7 @@ export const GroceryService = {
       onUpdate(loadLocalHistory());
     };
 
-    window.addEventListener('grocesplit_payment_history_updated', handleCustomEvent);
+    window.addEventListener('dormmate_payment_history_updated', handleCustomEvent);
 
     if (db) {
       const q = query(collection(db, 'paymentHistory'));
@@ -297,13 +297,13 @@ export const GroceryService = {
       return () => {
         unsubscribe();
         window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('grocesplit_payment_history_updated', handleCustomEvent);
+        window.removeEventListener('dormmate_payment_history_updated', handleCustomEvent);
       };
     }
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('grocesplit_payment_history_updated', handleCustomEvent);
+      window.removeEventListener('dormmate_payment_history_updated', handleCustomEvent);
     };
   },
 
@@ -313,10 +313,10 @@ export const GroceryService = {
     localStorage.setItem(key, JSON.stringify(data));
     // Dispatch custom event for same-window updates (StorageEvent only fires for other tabs)
     const eventName = key === ITEMS_STORAGE_KEY
-      ? 'grocesplit_items_updated'
+      ? 'dormmate_items_updated'
       : key === USERS_STORAGE_KEY
-        ? 'grocesplit_users_updated'
-        : 'grocesplit_payment_history_updated';
+        ? 'dormmate_users_updated'
+        : 'dormmate_payment_history_updated';
     window.dispatchEvent(new CustomEvent(eventName));
     // Also dispatch StorageEvent for other tabs
     window.dispatchEvent(new StorageEvent('storage', { key, newValue: JSON.stringify(data) }));

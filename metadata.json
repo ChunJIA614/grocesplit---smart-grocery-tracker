@@ -1,5 +1,8 @@
 {
-  "name": "GroceSplit - Smart Grocery Tracker",
-  "description": "A smart grocery inventory and expense splitting tracker. Manage fridge inventory, track usage, and automatically calculate shared costs among housemates.",
-  "requestFramePermissions": []
+  "name": "DormMate - Shared Living Tracker",
+  "description": "A smart shared living manager. Track groceries/fridge inventory, log aircond hours, and split monthly room rental and utility bills seamlessly among housemates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

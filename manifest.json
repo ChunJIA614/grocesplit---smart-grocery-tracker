@@ -1,7 +1,7 @@
 {
-  "name": "GroceSplit - Smart Grocery Tracker",
-  "short_name": "GroceSplit",
-  "description": "Track and split grocery expenses with your household. Sync data across all devices.",
+  "name": "DormMate - Roommate Expense & Shared Life Tracker",
+  "short_name": "DormMate",
+  "description": "Manage shared life in your dorm or apartment: Track fridge inventory, aircond usage, and split bills easily.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

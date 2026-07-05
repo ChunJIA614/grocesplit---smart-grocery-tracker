@@ -19,9 +19,9 @@ export default defineConfig(({ mode }) => {
           injectRegister: 'auto',
           includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
           manifest: {
-            name: 'GroceSplit - Smart Grocery Tracker',
-            short_name: 'GroceSplit',
-            description: 'Track and split grocery expenses with your household',
+            name: 'DormMate - Roommate Expense & Shared Life Tracker',
+            short_name: 'DormMate',
+            description: 'Manage shared life in your dorm or apartment: Track fridge inventory, aircond usage, and split bills easily.',
             theme_color: '#2563eb',
             background_color: '#ffffff',
             display: 'standalone',

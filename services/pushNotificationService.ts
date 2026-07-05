@@ -3,7 +3,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { app, db } from './firebaseConfig';
 import { PushTokenRecord, User } from '../types';
 
-const PUSH_TOKEN_STORAGE_KEY = 'grocesplit_fcm_token';
+const PUSH_TOKEN_STORAGE_KEY = 'dormmate_fcm_token';
 
 const getVapidKey = () => process.env.FIREBASE_VAPID_KEY || '';
 

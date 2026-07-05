@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LayoutGrid, List as ListIcon, Plus, Menu, User as UserIcon, CloudOff, Cloud, LogOut, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { LayoutGrid, List as ListIcon, Plus, Menu, User as UserIcon, CloudOff, Cloud, LogOut, Wifi, WifiOff, RefreshCw, Wind, CreditCard } from 'lucide-react';
 import { GroceryService } from './services/groceryService';
 import { PushNotificationService } from './services/pushNotificationService';
 import { suggestRecipe } from './services/geminiService';
@@ -11,6 +11,8 @@ import { ManageUsersModal } from './components/ManageUsersModal';
 import { LoginScreen } from './components/LoginScreen';
 import { Button } from './components/Button';
 import { db } from './services/firebaseConfig';
+import { AircondUsageTracker } from './components/AircondUsageTracker';
+import { RentalExpenseTracker } from './components/RentalExpenseTracker';
 
 const App: React.FC = () => {
   // Identity State
@@ -20,7 +22,7 @@ const App: React.FC = () => {
   const [items, setItems] = useState<GroceryItem[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'list'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'list' | 'aircond' | 'rental'>('dashboard');
   const [loading, setLoading] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
@@ -161,7 +163,7 @@ const App: React.FC = () => {
   // Subscriptions
   useEffect(() => {
     // Try to recover user session from localstorage (simple persistence)
-    const savedUserId = localStorage.getItem('grocesplit_current_user_id');
+    const savedUserId = localStorage.getItem('dormmate_current_user_id');
 
     // Set a timeout to stop loading even if Firebase doesn't respond
     const loadingTimeout = setTimeout(() => {
@@ -196,12 +198,12 @@ const App: React.FC = () => {
 
   const handleUserLogin = (user: User) => {
     setCurrentUser(user);
-    localStorage.setItem('grocesplit_current_user_id', user.id);
+    localStorage.setItem('dormmate_current_user_id', user.id);
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('grocesplit_current_user_id');
+    localStorage.removeItem('dormmate_current_user_id');
   };
 
   const updateRecipeSuggestion = async (currentItems: GroceryItem[]) => {
@@ -350,7 +352,7 @@ const App: React.FC = () => {
           <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-blue-100 overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-5 text-white">
               <p className="text-xs uppercase tracking-[0.2em] text-blue-100 font-semibold mb-2">Update required</p>
-              <h2 className="text-2xl font-bold leading-tight">A newer GroceSplit version is ready</h2>
+              <h2 className="text-2xl font-bold leading-tight">A newer dormmate version is ready</h2>
               <p className="text-sm text-blue-100 mt-2">
                 Install the latest version to keep notifications, payment history, and sync working correctly.
               </p>
@@ -383,10 +385,10 @@ const App: React.FC = () => {
       <div className={`md:hidden bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 flex justify-between items-center sticky ${!isOnline || showUpdatePrompt ? 'top-10' : 'top-0'} z-50 safe-area-top`}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-            <span className="text-lg">🥦</span>
+            <span className="text-lg">🏠</span>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">GroceSplit</h1>
+            <h1 className="text-lg font-bold text-white">DormMate</h1>
             <div className="flex items-center gap-1">
               {isOnline ? (
                 <><Wifi className="w-3 h-3 text-green-300" /><span className="text-[10px] text-blue-100">Synced</span></>
@@ -410,8 +412,8 @@ const App: React.FC = () => {
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 shadow-sm">
         <div className="p-6 border-b border-gray-100">
           <h1 className="text-2xl font-bold text-blue-700 flex items-center gap-2">
-            <span className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center text-blue-600">🥦</span>
-            GroceSplit
+            <span className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center text-blue-600">🏠</span>
+            DormMate
           </h1>
           <div className="mt-2 flex items-center gap-2 text-xs">
              {db && isOnline ? (
@@ -451,6 +453,24 @@ const App: React.FC = () => {
           >
             <ListIcon className="w-5 h-5" />
             Inventory & List
+          </button>
+          <button 
+            onClick={() => setActiveTab('aircond')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded transition-all ${
+              activeTab === 'aircond' ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-100' : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Wind className="w-5 h-5 text-sky-500" />
+            AC Usage
+          </button>
+          <button 
+            onClick={() => setActiveTab('rental')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded transition-all ${
+              activeTab === 'rental' ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-100' : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <CreditCard className="w-5 h-5 text-amber-500" />
+            Dorm Rent & Bills
           </button>
         </nav>
 
@@ -500,16 +520,30 @@ const App: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
-              {activeTab === 'dashboard' ? `Hello, ${currentUser.name}!` : 'Grocery Inventory'}
+              {activeTab === 'dashboard' 
+                ? `Hello, ${currentUser.name}!` 
+                : activeTab === 'list' 
+                  ? 'Grocery Inventory' 
+                  : activeTab === 'aircond'
+                    ? 'Aircond Usage Tracker'
+                    : 'Dorm Rent & Shared Bills'}
             </h2>
             <p className="text-sm text-gray-500">
-               {activeTab === 'dashboard' ? 'Here is what you owe for groceries.' : 'Manage fridge items and usage.'}
+               {activeTab === 'dashboard' 
+                 ? 'Here is what you owe for groceries.' 
+                 : activeTab === 'list' 
+                   ? 'Manage fridge items and usage.' 
+                   : activeTab === 'aircond'
+                     ? 'Record and track aircond usage hours.'
+                     : 'Manage and split dorm rental and monthly utility fees.'}
             </p>
           </div>
-          <Button onClick={() => setModalOpen(true)} className="shadow-sm hidden md:flex">
-            <Plus className="w-5 h-5" />
-            <span>Add Item</span>
-          </Button>
+          {activeTab !== 'aircond' && activeTab !== 'rental' && (
+            <Button onClick={() => setModalOpen(true)} className="shadow-sm hidden md:flex">
+              <Plus className="w-5 h-5" />
+              <span>Add Item</span>
+            </Button>
+          )}
         </div>
 
         {notificationPermission !== 'granted' && 'Notification' in window && (
@@ -529,7 +563,7 @@ const App: React.FC = () => {
         <div className="space-y-6">
           {activeTab === 'dashboard' ? (
              <Dashboard items={items} users={users} currentUser={currentUser} paymentHistory={paymentHistory} />
-          ) : (
+          ) : activeTab === 'list' ? (
              <GroceryList 
                items={items} 
                users={users}
@@ -540,6 +574,10 @@ const App: React.FC = () => {
                recipeSuggestion={recipeText}
                onRefreshRecipe={() => updateRecipeSuggestion(items)}
              />
+          ) : activeTab === 'aircond' ? (
+             <AircondUsageTracker users={users} currentUser={currentUser} />
+          ) : (
+             <RentalExpenseTracker users={users} currentUser={currentUser} />
           )}
         </div>
 
@@ -559,16 +597,6 @@ const App: React.FC = () => {
           </button>
           
           <button 
-            onClick={() => setModalOpen(true)}
-            className="flex-1 flex flex-col items-center py-3 text-blue-600 transition-all"
-          >
-            <div className="p-2 rounded-xl bg-blue-600 text-white">
-              <Plus className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] mt-1 font-semibold">Add</span>
-          </button>
-          
-          <button 
             onClick={() => setActiveTab('list')}
             className={`flex-1 flex flex-col items-center py-3 transition-all ${activeTab === 'list' ? 'text-blue-600' : 'text-gray-400'}`}
           >
@@ -577,15 +605,45 @@ const App: React.FC = () => {
             </div>
             <span className="text-[10px] mt-1 font-semibold">List</span>
           </button>
+
+          <button 
+            onClick={() => setModalOpen(true)}
+            className="flex-1 flex flex-col items-center py-3 text-blue-600 transition-all"
+          >
+            <div className="p-2 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
+              <Plus className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] mt-1 font-semibold">Add</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('aircond')}
+            className={`flex-1 flex flex-col items-center py-3 transition-all ${activeTab === 'aircond' ? 'text-blue-600' : 'text-gray-400'}`}
+          >
+            <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'aircond' ? 'bg-sky-100 text-sky-600' : ''}`}>
+              <Wind className="w-5 h-5" />
+            </div>
+            <span className="text-[9px] mt-0.5 font-bold">AC</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('rental')}
+            className={`flex-1 flex flex-col items-center py-3 transition-all ${activeTab === 'rental' ? 'text-blue-600' : 'text-gray-400'}`}
+          >
+            <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'rental' ? 'bg-amber-100 text-amber-600' : ''}`}>
+              <CreditCard className="w-5 h-5" />
+            </div>
+            <span className="text-[9px] mt-0.5 font-bold">Bills</span>
+          </button>
           
           <button 
             onClick={handleLogout}
             className="flex-1 flex flex-col items-center py-3 text-gray-400 active:text-red-500 transition-colors"
           >
-            <div className="p-2">
+            <div className="p-1.5">
               <LogOut className="w-5 h-5" />
             </div>
-            <span className="text-[10px] mt-1 font-semibold">Exit</span>
+            <span className="text-[9px] mt-0.5 font-bold">Exit</span>
           </button>
         </div>
       </div>

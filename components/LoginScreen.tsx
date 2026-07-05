@@ -14,10 +14,10 @@ export const LoginScreen: React.FC<Props> = ({ users, onSelectUser, onManageUser
        {/* Logo Section */}
        <div className="text-center mb-8">
           <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-700/30 border border-white/20">
-             <span className="text-5xl">🥦</span>
+             <span className="text-5xl">🏠</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">GroceSplit</h1>
-          <p className="text-blue-100 text-sm mt-1">Who's shopping today?</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">DormMate</h1>
+          <p className="text-blue-100 text-sm mt-1">Select your profile to continue</p>
        </div>
 
        {/* User Grid */}
