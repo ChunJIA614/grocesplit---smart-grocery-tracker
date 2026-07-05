@@ -104,7 +104,12 @@ export const AircondService = {
     // Save to Firestore if available
     if (db) {
       try {
-        await setDoc(doc(db, 'aircondUsage', entry.id), entry);
+        const firestoreEntry = {
+          ...entry,
+          ...(entry.notes ? { notes: entry.notes } : {}),
+        };
+
+        await setDoc(doc(db, 'aircondUsage', entry.id), firestoreEntry);
       } catch (error) {
         console.warn('Saved aircond usage locally, but Firestore sync failed:', error);
       }
