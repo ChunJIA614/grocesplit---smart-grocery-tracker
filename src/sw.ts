@@ -35,8 +35,8 @@ if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.messagin
 
     self.registration.showNotification(title, {
       body,
-      icon: '/pwa-192x192.png',
-      badge: '/pwa-192x192.png',
+      icon: '/pwa-192x192-v2.png',
+      badge: '/pwa-192x192-v2.png',
       data: { url },
     });
   });
@@ -60,11 +60,11 @@ self.addEventListener('push', (event) => {
   const body = data.notification?.body || data.body || data.data?.body || 'There is an update in your dorm.';
   const url = data.data?.url || data.url || '/';
 
-  event.waitUntil(
+    event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon: '/pwa-192x192.png',
-      badge: '/pwa-192x192.png',
+      icon: '/pwa-192x192-v2.png',
+      badge: '/pwa-192x192-v2.png',
       data: { url },
     })
   );

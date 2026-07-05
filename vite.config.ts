@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
           srcDir: 'src',
           filename: 'sw.ts',
           injectRegister: 'auto',
-          includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+          includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-192x192-v2.png', 'pwa-512x512-v2.png', 'favicon-v2.png', 'apple-touch-icon-v2.png'],
           manifest: {
             name: 'DormMate - Roommate Expense & Shared Life Tracker',
             short_name: 'DormMate',
@@ -31,17 +31,17 @@ export default defineConfig(({ mode }) => {
             categories: ['finance', 'productivity', 'utilities'],
             icons: [
               {
-                src: 'pwa-192x192.png',
+                src: 'pwa-192x192-v2.png',
                 sizes: '192x192',
                 type: 'image/png'
               },
               {
-                src: 'pwa-512x512.png',
+                src: 'pwa-512x512-v2.png',
                 sizes: '512x512',
                 type: 'image/png'
               },
               {
-                src: 'pwa-512x512.png',
+                src: 'pwa-512x512-v2.png',
                 sizes: '512x512',
                 type: 'image/png',
                 purpose: 'any maskable'

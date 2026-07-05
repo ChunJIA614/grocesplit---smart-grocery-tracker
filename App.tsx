@@ -34,9 +34,7 @@ const App: React.FC = () => {
   // Connectivity State
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallButton, setShowInstallButton] = useState(false);
-  const [showManualInstallPrompt, setShowManualInstallPrompt] = useState(false);
+  
   
   // Modals
   const [isModalOpen, setModalOpen] = useState(false);
@@ -77,56 +75,7 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // PWA install prompt handling
-  useEffect(() => {
-    const onBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      console.log('beforeinstallprompt event fired');
-      setDeferredPrompt(e);
-      setShowInstallButton(true);
-    };
-
-    const onAppInstalled = () => {
-      setDeferredPrompt(null);
-      setShowInstallButton(false);
-    };
-
-    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
-    window.addEventListener('appinstalled', onAppInstalled as EventListener);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
-      window.removeEventListener('appinstalled', onAppInstalled as EventListener);
-    };
-  }, []);
-
-  // Fallback: show manual install instructions on mobile if browser doesn't fire beforeinstallprompt
-  useEffect(() => {
-    const mobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-    if (!mobile) return;
-    const t = setTimeout(() => {
-      if (!deferredPrompt) {
-        setShowManualInstallPrompt(true);
-      }
-    }, 2500);
-
-    return () => clearTimeout(t);
-  }, [deferredPrompt]);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    try {
-      const choice = await deferredPrompt.userChoice;
-      // choice.outcome === 'accepted' or 'dismissed'
-      setShowInstallButton(false);
-      setDeferredPrompt(null);
-    } catch (err) {
-      // ignore
-      setShowInstallButton(false);
-      setDeferredPrompt(null);
-    }
-  };
+  
 
   useEffect(() => {
     const unsubscribe = GroceryService.subscribePaymentHistory((history) => {
@@ -179,15 +128,15 @@ const App: React.FC = () => {
         const registration = await navigator.serviceWorker.ready;
         await registration.showNotification(alert.title, {
           body: alert.body,
-          icon: '/pwa-192x192.png',
-          badge: '/pwa-192x192.png',
+          icon: '/pwa-192x192-v2.png',
+          badge: '/pwa-192x192-v2.png',
         });
         return;
       }
 
       new Notification(alert.title, {
         body: alert.body,
-        icon: '/pwa-192x192.png',
+        icon: '/pwa-192x192-v2.png',
       });
     } catch (error) {
       console.warn('Unable to show browser notification:', error);
@@ -453,9 +402,6 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {showInstallButton && (
-            <button onClick={handleInstallClick} className="bg-white/90 text-blue-700 px-3 py-1 rounded-xl text-sm font-semibold">Install</button>
-          )}
           <button 
             className={`w-10 h-10 rounded-full ${currentUser.avatarColor} text-white font-bold text-sm flex items-center justify-center shadow-lg border-2 border-white/30`}
             onClick={() => setUserModalOpen(true)}
@@ -465,12 +411,7 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {showManualInstallPrompt && (
-        <div className="md:hidden fixed bottom-4 left-4 right-4 bg-white border rounded-xl p-3 shadow-lg z-50 flex items-center justify-between gap-3">
-          <div className="text-sm text-gray-800">Install DormMate: open browser menu and select "Add to Home screen".</div>
-          <button onClick={() => { alert('Android (Chrome): Menu → Add to Home screen\niOS (Safari): Share → Add to Home Screen'); setShowManualInstallPrompt(false); }} className="bg-blue-600 text-white px-3 py-1 rounded-xl text-sm">How</button>
-        </div>
-      )}
+      
       {/* Sidebar (Desktop) / Navigation */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 shadow-sm">
         <div className="p-6 border-b border-gray-100">
