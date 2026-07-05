@@ -34,6 +34,8 @@ const App: React.FC = () => {
   // Connectivity State
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
   
   // Modals
   const [isModalOpen, setModalOpen] = useState(false);
@@ -73,6 +75,43 @@ const App: React.FC = () => {
       });
     }
   }, []);
+
+  // PWA install prompt handling
+  useEffect(() => {
+    const onBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+
+    const onAppInstalled = () => {
+      setDeferredPrompt(null);
+      setShowInstallButton(false);
+    };
+
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
+    window.addEventListener('appinstalled', onAppInstalled as EventListener);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
+      window.removeEventListener('appinstalled', onAppInstalled as EventListener);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try {
+      const choice = await deferredPrompt.userChoice;
+      // choice.outcome === 'accepted' or 'dismissed'
+      setShowInstallButton(false);
+      setDeferredPrompt(null);
+    } catch (err) {
+      // ignore
+      setShowInstallButton(false);
+      setDeferredPrompt(null);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = GroceryService.subscribePaymentHistory((history) => {
@@ -399,12 +438,15 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-            <button 
-              className={`w-10 h-10 rounded-full ${currentUser.avatarColor} text-white font-bold text-sm flex items-center justify-center shadow-lg border-2 border-white/30`}
-              onClick={() => setUserModalOpen(true)}
-            >
-                {currentUser.name[0]}
-            </button>
+          {showInstallButton && (
+            <button onClick={handleInstallClick} className="bg-white/90 text-blue-700 px-3 py-1 rounded-xl text-sm font-semibold">Install</button>
+          )}
+          <button 
+            className={`w-10 h-10 rounded-full ${currentUser.avatarColor} text-white font-bold text-sm flex items-center justify-center shadow-lg border-2 border-white/30`}
+            onClick={() => setUserModalOpen(true)}
+          >
+              {currentUser.name[0]}
+          </button>
         </div>
       </div>
 
