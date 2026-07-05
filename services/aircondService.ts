@@ -106,7 +106,7 @@ export const AircondService = {
       try {
         const firestoreEntry = {
           ...entry,
-          ...(entry.notes ? { notes: entry.notes } : {}),
+          notes: entry.notes ?? null,
         };
 
         await setDoc(doc(db, 'aircondUsage', entry.id), firestoreEntry);
