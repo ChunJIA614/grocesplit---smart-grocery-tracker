@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LayoutGrid, List as ListIcon, Plus, Menu, User as UserIcon, CloudOff, Cloud, LogOut, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { GroceryService } from './services/groceryService';
+import { PushNotificationService } from './services/pushNotificationService';
 import { suggestRecipe } from './services/geminiService';
-import { GroceryItem, ItemStatus, User } from './types';
+import { GroceryItem, ItemStatus, PaymentHistoryEntry, User } from './types';
 import { Dashboard } from './components/Dashboard';
 import { GroceryList } from './components/GroceryList';
 import { AddGroceryModal } from './components/AddGroceryModal';
@@ -18,8 +19,15 @@ const App: React.FC = () => {
   // Data State
   const [items, setItems] = useState<GroceryItem[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'list'>('dashboard');
   const [loading, setLoading] = useState(true);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
+  );
+  const [billAlerts, setBillAlerts] = useState<Array<{ id: string; title: string; body: string; createdAt: string }>>([]);
+  const seenHistoryIdsRef = useRef<Set<string>>(new Set());
+  const historyInitializedRef = useRef(false);
   
   // Connectivity State
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -63,6 +71,88 @@ const App: React.FC = () => {
       });
     }
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = GroceryService.subscribePaymentHistory((history) => {
+      setPaymentHistory(history);
+
+      if (!historyInitializedRef.current) {
+        history.forEach(entry => seenHistoryIdsRef.current.add(entry.id));
+        historyInitializedRef.current = true;
+        return;
+      }
+
+      const newBillEntries = history.filter(entry => entry.type === 'BILL_CREATED' && !seenHistoryIdsRef.current.has(entry.id));
+      if (newBillEntries.length === 0) return;
+
+      newBillEntries.forEach(entry => {
+        seenHistoryIdsRef.current.add(entry.id);
+        const alert = {
+          id: entry.id,
+          title: `New split payment: ${entry.itemName}`,
+          body: `Latest bill $${entry.latestBillAmount.toFixed(2)} | Total overdue $${entry.totalOutstanding.toFixed(2)}`,
+          createdAt: entry.createdAt,
+        };
+
+        setBillAlerts(prev => [alert, ...prev].slice(0, 4));
+
+        if (notificationPermission === 'granted') {
+          void showBrowserNotification(alert);
+        }
+      });
+    });
+
+    return unsubscribe;
+  }, [notificationPermission]);
+
+  useEffect(() => {
+    if (!currentUser || notificationPermission !== 'granted') {
+      return;
+    }
+
+    void PushNotificationService.registerForPushNotifications(currentUser).catch((error) => {
+      console.warn('Push token registration failed:', error);
+    });
+  }, [currentUser, notificationPermission]);
+
+  const showBrowserNotification = async (alert: { title: string; body: string }) => {
+    try {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        await registration.showNotification(alert.title, {
+          body: alert.body,
+          icon: '/pwa-192x192.png',
+          badge: '/pwa-192x192.png',
+        });
+        return;
+      }
+
+      new Notification(alert.title, {
+        body: alert.body,
+        icon: '/pwa-192x192.png',
+      });
+    } catch (error) {
+      console.warn('Unable to show browser notification:', error);
+    }
+  };
+
+  const handleEnableNotifications = async () => {
+    if (!('Notification' in window)) return;
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+
+    if (permission === 'granted' && currentUser) {
+      await PushNotificationService.registerForPushNotifications(currentUser).catch((error) => {
+        console.warn('Push token registration failed after permission grant:', error);
+      });
+    }
+  };
+
+  const dismissBillAlert = (id: string) => {
+    setBillAlerts(prev => prev.filter(alert => alert.id !== id));
+  };
 
   const handleUpdate = () => {
     window.location.reload();
@@ -162,7 +252,10 @@ const App: React.FC = () => {
         ...item,
         status: ItemStatus.USED,
         sharedBy: selectedUsers,
-        paidBy: []
+        paidBy: [],
+        createdById: currentUser.id,
+        createdByName: currentUser.name,
+        dateAdded: new Date().toISOString()
       };
       await GroceryService.updateItemDetails(updatedItem);
       return;
@@ -176,6 +269,8 @@ const App: React.FC = () => {
       status: ItemStatus.USED,
       sharedBy: selectedUsers,
       paidBy: [],
+      createdById: currentUser.id,
+      createdByName: currentUser.name,
       dateAdded: new Date().toISOString()
     };
 
@@ -251,14 +346,28 @@ const App: React.FC = () => {
       
       {/* PWA Update Prompt */}
       {showUpdatePrompt && (
-        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex justify-between items-center z-50 shadow-lg">
-          <span className="text-sm">A new version is available!</span>
-          <button 
-            onClick={handleUpdate}
-            className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium flex items-center gap-1 hover:bg-blue-50"
-          >
-            <RefreshCw className="w-4 h-4" /> Update
-          </button>
+        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-blue-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-5 text-white">
+              <p className="text-xs uppercase tracking-[0.2em] text-blue-100 font-semibold mb-2">Update required</p>
+              <h2 className="text-2xl font-bold leading-tight">A newer GroceSplit version is ready</h2>
+              <p className="text-sm text-blue-100 mt-2">
+                Install the latest version to keep notifications, payment history, and sync working correctly.
+              </p>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4 text-sm text-blue-900">
+                Your current session will refresh to the latest live build.
+              </div>
+              <button 
+                onClick={handleUpdate}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Install latest version
+              </button>
+            </div>
+          </div>
         </div>
       )}
       
@@ -370,6 +479,23 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 px-4 pt-4 pb-28 md:p-8 md:pb-8 overflow-y-auto max-w-5xl mx-auto w-full">
+        {billAlerts.length > 0 && (
+          <div className="fixed right-4 top-4 md:right-6 md:top-6 z-50 w-[calc(100%-2rem)] max-w-sm space-y-2 pointer-events-none">
+            {billAlerts.map(alert => (
+              <div key={alert.id} className="pointer-events-auto rounded-2xl border border-blue-100 bg-white shadow-xl shadow-blue-500/10 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Bill Notification</p>
+                    <h4 className="text-sm font-semibold text-gray-800 mt-1">{alert.title}</h4>
+                    <p className="text-xs text-gray-500 mt-1">{alert.body}</p>
+                    <p className="text-[10px] text-gray-400 mt-2">{new Date(alert.createdAt).toLocaleString()}</p>
+                  </div>
+                  <button onClick={() => dismissBillAlert(alert.id)} className="text-gray-400 hover:text-gray-700 text-sm leading-none">✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <div>
@@ -386,10 +512,23 @@ const App: React.FC = () => {
           </Button>
         </div>
 
+        {notificationPermission !== 'granted' && 'Notification' in window && (
+          <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 className="font-semibold text-blue-900">Enable split payment notifications</h3>
+              <p className="text-sm text-blue-700">Get alerted when a new bill is created, with overdue total and latest bill amount.</p>
+            </div>
+            <Button onClick={handleEnableNotifications} className="whitespace-nowrap">
+              <Wifi className="w-4 h-4" />
+              Enable notifications
+            </Button>
+          </div>
+        )}
+
         {/* Content Switcher */}
         <div className="space-y-6">
           {activeTab === 'dashboard' ? (
-             <Dashboard items={items} users={users} currentUser={currentUser} />
+             <Dashboard items={items} users={users} currentUser={currentUser} paymentHistory={paymentHistory} />
           ) : (
              <GroceryList 
                items={items} 

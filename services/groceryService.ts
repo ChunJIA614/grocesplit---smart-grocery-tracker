@@ -1,13 +1,13 @@
-import { GroceryItem, ItemStatus, User } from '../types';
+import { GroceryItem, ItemStatus, PaymentHistoryEntry, User } from '../types';
 import { db } from './firebaseConfig';
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  deleteDoc, 
-  onSnapshot, 
-  query, 
-  getDoc
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  setDoc,
 } from 'firebase/firestore';
 
 // --- Default Data for Local Fallback ---
@@ -20,8 +20,147 @@ const DEFAULT_USERS: User[] = [
 
 const ITEMS_STORAGE_KEY = 'grocesplit_items';
 const USERS_STORAGE_KEY = 'grocesplit_users';
+const PAYMENT_HISTORY_STORAGE_KEY = 'grocesplit_payment_history';
 
 type Listener<T> = (data: T) => void;
+
+const normalizeItem = (item: GroceryItem): GroceryItem => ({
+  ...item,
+  paidBy: item.paidBy || [],
+  sharedBy: item.sharedBy || [],
+});
+
+const loadLocalItems = (): GroceryItem[] => {
+  const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
+  const parsed: GroceryItem[] = localData ? JSON.parse(localData) : [];
+  return parsed.map(normalizeItem);
+};
+
+const loadLocalUsers = (): User[] => {
+  const localData = localStorage.getItem(USERS_STORAGE_KEY);
+  return localData ? JSON.parse(localData) : DEFAULT_USERS;
+};
+
+const loadLocalHistory = (): PaymentHistoryEntry[] => {
+  const localData = localStorage.getItem(PAYMENT_HISTORY_STORAGE_KEY);
+  const parsed: PaymentHistoryEntry[] = localData ? JSON.parse(localData) : [];
+  return parsed.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+};
+
+const normalizeHistoryEntry = (entry: PaymentHistoryEntry): PaymentHistoryEntry => ({
+  ...entry,
+  amount: Number(entry.amount) || 0,
+  shareCount: Number(entry.shareCount) || 0,
+  totalOutstanding: Number(entry.totalOutstanding) || 0,
+  latestBillAmount: Number(entry.latestBillAmount) || 0,
+});
+
+const saveLocalHistory = (entries: PaymentHistoryEntry[]) => {
+  localStorage.setItem(PAYMENT_HISTORY_STORAGE_KEY, JSON.stringify(entries));
+  window.dispatchEvent(new CustomEvent('grocesplit_payment_history_updated'));
+  window.dispatchEvent(new StorageEvent('storage', {
+    key: PAYMENT_HISTORY_STORAGE_KEY,
+    newValue: JSON.stringify(entries)
+  }));
+};
+
+const upsertHistoryEntry = (entry: PaymentHistoryEntry) => {
+  const history = loadLocalHistory();
+  const index = history.findIndex(existing => existing.id === entry.id);
+  if (index >= 0) {
+    history[index] = entry;
+  } else {
+    history.unshift(entry);
+  }
+  history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  saveLocalHistory(history);
+};
+
+const mergeCollectionsById = <T extends { id: string }>(entries: T[]) => {
+  const map = new Map<string, T>();
+  entries.forEach(entry => map.set(entry.id, entry));
+  return Array.from(map.values());
+};
+
+export const calculateDebtSnapshot = (items: GroceryItem[], users: User[]) => {
+  const debtMap: Record<string, number> = {};
+  users.forEach(user => {
+    debtMap[user.id] = 0;
+  });
+
+  items
+    .filter(item => item.status === ItemStatus.USED)
+    .forEach(item => {
+      const splitCount = item.sharedBy.length;
+      if (splitCount === 0) return;
+
+      const costPerPerson = item.totalPrice / splitCount;
+      const paidBy = item.paidBy || [];
+
+      item.sharedBy.forEach(userId => {
+        if (!paidBy.includes(userId) && debtMap[userId] !== undefined) {
+          debtMap[userId] += costPerPerson;
+        }
+      });
+    });
+
+  const totalOutstanding = Object.values(debtMap).reduce((acc, amount) => acc + amount, 0);
+
+  return {
+    debtMap,
+    totalOutstanding,
+  };
+};
+
+const createBillHistoryEntry = (item: GroceryItem, items: GroceryItem[]): PaymentHistoryEntry | null => {
+  if (item.status !== ItemStatus.USED || item.sharedBy.length === 0) {
+    return null;
+  }
+
+  const history = loadLocalHistory();
+  if (history.some(entry => entry.type === 'BILL_CREATED' && entry.itemId === item.id)) {
+    return null;
+  }
+
+  const users = loadLocalUsers();
+  const { totalOutstanding } = calculateDebtSnapshot(items, users);
+  const actorName = item.createdByName || users.find(user => user.id === item.createdById)?.name || 'Household';
+
+  return {
+    id: `bill-${item.id}`,
+    type: 'BILL_CREATED',
+    itemId: item.id,
+    itemName: item.name,
+    actorId: item.createdById || 'household',
+    actorName,
+    amount: item.totalPrice,
+    shareCount: item.sharedBy.length,
+    totalOutstanding,
+    latestBillAmount: item.totalPrice,
+    createdAt: item.dateAdded,
+    message: `${actorName} created a split bill for ${item.name}. Latest bill: $${item.totalPrice.toFixed(2)}. Total overdue: $${totalOutstanding.toFixed(2)}.`,
+  };
+};
+
+const createPaymentHistoryEntry = (item: GroceryItem, userId: string, amount: number, totalOutstanding: number): PaymentHistoryEntry => {
+  const users = loadLocalUsers();
+  const actorName = users.find(user => user.id === userId)?.name || 'Unknown';
+
+  return {
+    id: `payment-${item.id}-${userId}-${Date.now()}`,
+    type: 'PAYMENT_MADE',
+    itemId: item.id,
+    itemName: item.name,
+    actorId: userId,
+    actorName,
+    amount,
+    shareCount: item.sharedBy.length,
+    totalOutstanding,
+    latestBillAmount: item.totalPrice,
+    createdAt: new Date().toISOString(),
+    message: `${actorName} paid $${amount.toFixed(2)} for ${item.name}. Total overdue is now $${totalOutstanding.toFixed(2)}.`,
+  };
+};
 
 export const GroceryService = {
   
@@ -29,27 +168,21 @@ export const GroceryService = {
 
   subscribeItems: (onUpdate: Listener<GroceryItem[]>) => {
     // Always load from localStorage first for immediate display
-    const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
-    const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
-    localItems.forEach(i => { if(!i.paidBy) i.paidBy = []; });
+    const localItems = loadLocalItems();
     onUpdate(localItems);
     
     // Listen for localStorage changes (for immediate UI updates)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === ITEMS_STORAGE_KEY && e.newValue) {
         const parsed: GroceryItem[] = JSON.parse(e.newValue);
-        parsed.forEach(i => { if(!i.paidBy) i.paidBy = []; });
-        onUpdate(parsed);
+        onUpdate(parsed.map(normalizeItem));
       }
     };
     window.addEventListener('storage', handleStorageChange);
     
     // Also listen for custom events (same-window updates)
     const handleCustomEvent = () => {
-      const data = localStorage.getItem(ITEMS_STORAGE_KEY);
-      const parsed: GroceryItem[] = data ? JSON.parse(data) : [];
-      parsed.forEach(i => { if(!i.paidBy) i.paidBy = []; });
-      onUpdate(parsed);
+      onUpdate(loadLocalItems());
     };
     window.addEventListener('grocesplit_items_updated', handleCustomEvent);
     
@@ -61,8 +194,7 @@ export const GroceryService = {
         console.log("Firebase items snapshot received, docs count:", snapshot.docs.length);
         const items = snapshot.docs.map(docSnap => {
             const data = docSnap.data() as GroceryItem;
-            if (!data.paidBy) data.paidBy = [];
-            return data;
+            return normalizeItem(data);
         });
         items.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
         
@@ -132,12 +264,60 @@ export const GroceryService = {
     }
   },
 
+  subscribePaymentHistory: (onUpdate: Listener<PaymentHistoryEntry[]>) => {
+    const localHistory = loadLocalHistory();
+    onUpdate(localHistory);
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === PAYMENT_HISTORY_STORAGE_KEY && e.newValue) {
+        const parsed: PaymentHistoryEntry[] = JSON.parse(e.newValue);
+        onUpdate(parsed.map(normalizeHistoryEntry).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    const handleCustomEvent = () => {
+      onUpdate(loadLocalHistory());
+    };
+
+    window.addEventListener('grocesplit_payment_history_updated', handleCustomEvent);
+
+    if (db) {
+      const q = query(collection(db, 'paymentHistory'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const history = snapshot.docs.map(docSnap => normalizeHistoryEntry(docSnap.data() as PaymentHistoryEntry));
+        history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        saveLocalHistory(history);
+        onUpdate(history);
+      }, (error) => {
+        console.error('Firebase payment history subscription error:', error);
+      });
+
+      return () => {
+        unsubscribe();
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('grocesplit_payment_history_updated', handleCustomEvent);
+      };
+    }
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('grocesplit_payment_history_updated', handleCustomEvent);
+    };
+  },
+
   // --- Actions ---
 
   _triggerLocalUpdate: (key: string, data: any) => {
     localStorage.setItem(key, JSON.stringify(data));
     // Dispatch custom event for same-window updates (StorageEvent only fires for other tabs)
-    window.dispatchEvent(new CustomEvent(key === ITEMS_STORAGE_KEY ? 'grocesplit_items_updated' : 'grocesplit_users_updated'));
+    const eventName = key === ITEMS_STORAGE_KEY
+      ? 'grocesplit_items_updated'
+      : key === USERS_STORAGE_KEY
+        ? 'grocesplit_users_updated'
+        : 'grocesplit_payment_history_updated';
+    window.dispatchEvent(new CustomEvent(eventName));
     // Also dispatch StorageEvent for other tabs
     window.dispatchEvent(new StorageEvent('storage', { key, newValue: JSON.stringify(data) }));
   },
@@ -154,11 +334,10 @@ export const GroceryService = {
 
   saveItem: async (item: GroceryItem) => {
     // Ensure paidBy is initialized
-    const itemToSave = { ...item, paidBy: item.paidBy || [] };
+    const itemToSave = normalizeItem(item);
     
     // Always save to localStorage first for immediate UI update
-    const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
-    const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
+    const localItems = loadLocalItems();
     const existingIndex = localItems.findIndex(i => i.id === item.id);
     if (existingIndex >= 0) {
       localItems[existingIndex] = itemToSave;
@@ -175,12 +354,16 @@ export const GroceryService = {
         console.warn("Firebase save failed, data saved locally:", e);
       }
     }
+
+    const billHistoryEntry = createBillHistoryEntry(itemToSave, localItems);
+    if (billHistoryEntry) {
+      await GroceryService.savePaymentHistoryEntry(billHistoryEntry);
+    }
   },
 
   updateItemDetails: async (item: GroceryItem) => {
     // Always update localStorage first for immediate UI update
-    const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
-    const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
+    const localItems = loadLocalItems();
     const newLocalItems = localItems.map(i => i.id === item.id ? item : i);
     GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, newLocalItems);
     
@@ -192,12 +375,16 @@ export const GroceryService = {
         console.warn("Firebase update failed, data saved locally:", e);
       }
     }
+
+    const billHistoryEntry = createBillHistoryEntry(normalizeItem(item), newLocalItems.map(normalizeItem));
+    if (billHistoryEntry) {
+      await GroceryService.savePaymentHistoryEntry(billHistoryEntry);
+    }
   },
 
   updateItemStatus: async (id: string, status: ItemStatus) => {
     // Always update localStorage first
-    const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
-    const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
+    const localItems = loadLocalItems();
     const newLocalItems = localItems.map(i => i.id === id ? { ...i, status } : i);
     GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, newLocalItems);
     
@@ -212,8 +399,8 @@ export const GroceryService = {
 
   markSharePaid: async (itemId: string, userId: string, isPaid: boolean) => {
     // Update localStorage first for immediate feedback
-    const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
-    const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
+    const localItems = loadLocalItems();
+    const targetBefore = localItems.find(i => i.id === itemId);
     const newLocalItems = localItems.map(i => {
       if (i.id === itemId) {
         let paidBy = i.paidBy || [];
@@ -227,6 +414,15 @@ export const GroceryService = {
       return i;
     });
     GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, newLocalItems);
+
+    const updatedTarget = newLocalItems.find(i => i.id === itemId);
+    if (isPaid && targetBefore && updatedTarget && !(targetBefore.paidBy || []).includes(userId)) {
+      const users = loadLocalUsers();
+      const { totalOutstanding } = calculateDebtSnapshot(newLocalItems, users);
+      const splitCount = updatedTarget.sharedBy.length || 1;
+      const amount = updatedTarget.totalPrice / splitCount;
+      await GroceryService.savePaymentHistoryEntry(createPaymentHistoryEntry(updatedTarget, userId, amount, totalOutstanding));
+    }
     
     if (db) {
       try {
@@ -333,6 +529,20 @@ export const GroceryService = {
         console.log("All outstanding payments cleared in Firebase");
       } catch (e) {
         console.warn("Firebase clearAllOutstandingPayments failed:", e);
+      }
+    }
+  },
+
+  savePaymentHistoryEntry: async (entry: PaymentHistoryEntry) => {
+    const normalizedEntry = normalizeHistoryEntry(entry);
+    upsertHistoryEntry(normalizedEntry);
+
+    if (db) {
+      try {
+        await GroceryService._withTimeout(setDoc(doc(db, 'paymentHistory', normalizedEntry.id), normalizedEntry));
+        console.log('Payment history saved to Firebase:', normalizedEntry.id);
+      } catch (e) {
+        console.warn('Firebase savePaymentHistoryEntry failed:', e);
       }
     }
   }

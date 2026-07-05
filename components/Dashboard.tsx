@@ -1,47 +1,33 @@
 import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { GroceryItem, ItemStatus, User } from '../types';
-import { GroceryService } from '../services/groceryService';
-import { Check, CheckCircle2, Banknote } from 'lucide-react';
+import { GroceryItem, ItemStatus, PaymentHistoryEntry, User } from '../types';
+import { calculateDebtSnapshot, GroceryService } from '../services/groceryService';
+import { Check, CheckCircle2, Banknote, Clock3, ReceiptText, Wallet } from 'lucide-react';
 
 interface Props {
   items: GroceryItem[];
   users: User[];
   currentUser: User;
+  paymentHistory: PaymentHistoryEntry[];
 }
 
-export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
+export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentHistory }) => {
   
   const stats = useMemo(() => {
-    // 1. Calculate Outstanding Debt (Realized Cost - Paid)
     const usedItems = items.filter(i => i.status === ItemStatus.USED);
-    const debtMap: Record<string, number> = {};
-    
-    // Initialize map
-    users.forEach(u => debtMap[u.id] = 0);
+    const { debtMap, totalOutstanding } = calculateDebtSnapshot(usedItems, users);
 
     const currentUserUnpaidItems: { item: GroceryItem, amount: number }[] = [];
-
     usedItems.forEach(item => {
       const splitCount = item.sharedBy.length;
       if (splitCount === 0) return;
-      
+
       const costPerPerson = item.totalPrice / splitCount;
       const paidBy = item.paidBy || [];
-      
-      item.sharedBy.forEach(userId => {
-        // If this user has NOT paid yet, add to their debt
-        if (!paidBy.includes(userId)) {
-           if (debtMap[userId] !== undefined) {
-             debtMap[userId] += costPerPerson;
-           }
 
-           // Track items specifically for current user
-           if (userId === currentUser.id) {
-             currentUserUnpaidItems.push({ item, amount: costPerPerson });
-           }
-        }
-      });
+      if (item.sharedBy.includes(currentUser.id) && !paidBy.includes(currentUser.id)) {
+        currentUserUnpaidItems.push({ item, amount: costPerPerson });
+      }
     });
 
     const chartData = users.map(u => ({
@@ -50,15 +36,8 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
       color: u.avatarColor
     }));
 
-    // 2. Fridge Value (Pending Cost)
     const fridgeItems = items.filter(i => i.status === ItemStatus.FRIDGE);
     const fridgeValue = fridgeItems.reduce((acc, curr) => acc + curr.totalPrice, 0);
-
-    // 3. Outstanding Total (Total Owed by everyone)
-    const totalOutstanding = Object.values(debtMap).reduce((acc, v) => acc + v, 0);
-
-    console.log('Debt Map:', debtMap); // Debugging: Log the debt map
-    console.log('Total Outstanding:', totalOutstanding); // Debugging: Log the total outstanding amount
 
     return { chartData, fridgeValue, totalOutstanding, fridgeCount: fridgeItems.length, currentUserUnpaidItems, currentUserDebt: debtMap[currentUser.id] };
   }, [items, users, currentUser]);
@@ -98,6 +77,8 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
   };
 
   const CHART_COLORS = ['#0d6efd', '#6610f2', '#198754', '#ffc107', '#dc3545', '#0dcaf0'];
+  const recentHistory = paymentHistory.slice(0, 8);
+  const myPaymentHistory = paymentHistory.filter(entry => entry.actorId === currentUser.id && entry.type === 'PAYMENT_MADE');
 
   return (
     <div className="space-y-4">
@@ -212,6 +193,63 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser }) => {
                </div>
              ))}
            </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+              <ReceiptText className="w-4 h-4 text-blue-600" />
+              Payment History
+            </h3>
+            <p className="text-xs text-gray-400">Look back at the split bills and payments made in the household.</p>
+          </div>
+          <div className="text-right text-xs text-gray-500">
+            <div className="font-semibold text-gray-700">{myPaymentHistory.length} payments</div>
+            <div>Your recent payments</div>
+          </div>
+        </div>
+
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {recentHistory.length === 0 ? (
+            <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <Clock3 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <p className="font-medium">No payment history yet</p>
+              <p className="text-xs mt-1">Your split bills and payments will appear here.</p>
+            </div>
+          ) : (
+            recentHistory.map(entry => {
+              const isBill = entry.type === 'BILL_CREATED';
+              const isCurrentUser = entry.actorId === currentUser.id;
+
+              return (
+                <div key={entry.id} className="flex items-start justify-between gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isBill ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                        {isBill ? 'Split Bill' : 'Payment'}
+                      </span>
+                      <span className="text-sm font-semibold text-gray-800 truncate">{entry.itemName}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed">{entry.message}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-400">
+                      <span>{isBill ? `Latest bill $${entry.latestBillAmount.toFixed(2)}` : `Paid $${entry.amount.toFixed(2)}`}</span>
+                      <span>Total overdue $${entry.totalOutstanding.toFixed(2)}</span>
+                      <span>{new Date(entry.createdAt).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${isBill ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'}`}>
+                      {isBill ? <Wallet className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+                      {isCurrentUser ? 'You' : entry.actorName}
+                    </div>
+                    <div className="mt-2 text-sm font-bold text-gray-800">${entry.amount.toFixed(2)}</div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

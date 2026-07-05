@@ -11,10 +11,13 @@ A modern Progressive Web App (PWA) for tracking and splitting grocery expenses w
 - 📱 **PWA Support** - Install on any device (iOS, Android, Desktop) for a native-like experience
 - 🔄 **Real-time Sync** - Data syncs across all users via Firebase Firestore
 - 💰 **Cost Splitting** - Easily split grocery costs among household members
+- 📜 **Payment History** - Review past bills and payments by item and user
 - 📊 **Dashboard** - Visual insights into spending patterns with interactive charts (Recharts)
 - 🤖 **AI-Powered Parsing** - Smart grocery text parsing with Gemma 3 4B via Google GenAI
 - 🍳 **Recipe Suggestions** - AI-generated recipe ideas based on your current ingredients
 - 📶 **Offline Support** - Works without internet, syncs when back online (IndexedDB persistence)
+- 🔔 **Bill Notifications** - PWA alerts for new split bills with overdue and latest bill amounts
+- 📬 **True Background Push** - Firebase Cloud Messaging delivers split bills even when the app is closed
 - 👥 **Multi-user Management** - Add and manage household members with custom avatars
 - 🔐 **Simple Login** - Quick user identification for cost tracking
 
@@ -64,6 +67,7 @@ A modern Progressive Web App (PWA) for tracking and splitting grocery expenses w
    FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
    FIREBASE_MESSAGING_SENDER_ID=your_sender_id
    FIREBASE_APP_ID=your_app_id
+   FIREBASE_VAPID_KEY=your_web_push_vapid_key
    ```
 
 3. **Run the development server:**
@@ -72,6 +76,13 @@ A modern Progressive Web App (PWA) for tracking and splitting grocery expenses w
    ```
 
 4. Open http://localhost:3000
+
+## 🔔 Notifications and History
+
+- New split bills are written to a `paymentHistory` Firestore collection and mirrored to local storage.
+- Each installed PWA client can show a browser notification when a new split bill is created.
+- The dashboard includes a payment history panel so users can look back at bills they created and payments they made.
+- For background push delivery, each installed PWA registers an FCM token in the `pushTokens` collection.
 
 ## 🔥 Firebase Setup
 
@@ -93,9 +104,22 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if true; // Customize based on your auth needs
     }
+      match /paymentHistory/{entryId} {
+         allow read, write: if true; // Customize based on your auth needs
+      }
+      match /pushTokens/{tokenId} {
+         allow read, write: if true; // Customize based on your auth needs
+      }
   }
 }
 ```
+
+### Firebase Cloud Messaging Setup
+
+1. In Firebase Console, open **Project Settings > Cloud Messaging**.
+2. Create or copy the **Web Push certificate key pair**.
+3. Put the key into `FIREBASE_VAPID_KEY` in your build environment.
+4. Confirm Cloud Messaging is enabled for the same Firebase project used by Firestore.
 
 ## 🤖 AI Features Setup
 
@@ -186,10 +210,16 @@ npm run preview    # Preview production build locally
    - Set public directory to `dist`
    - Configure as single-page app: Yes
 
-3. **Deploy:**
+3. **Deploy Hosting and Functions:**
    ```bash
    npm run build
-   firebase deploy
+   firebase deploy --only functions,hosting
+   ```
+
+   If you only want to update one side:
+   ```bash
+   firebase deploy --only functions
+   firebase deploy --only hosting
    ```
 
 ## 📋 Environment Variables Reference
@@ -203,6 +233,18 @@ npm run preview    # Preview production build locally
 | `FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket | Optional |
 | `FIREBASE_MESSAGING_SENDER_ID` | Firebase Messaging Sender ID | Optional |
 | `FIREBASE_APP_ID` | Firebase App ID | Yes (for sync) |
+| `FIREBASE_VAPID_KEY` | Web Push key for FCM browser notifications | Yes (for push) |
+
+## 🚀 Notification Deployment Order
+
+To fully enable background push notifications:
+
+1. Build the frontend so the custom service worker is generated.
+2. Deploy Cloud Functions so new bill records trigger push sends.
+3. Deploy Hosting so the live app can register FCM tokens.
+4. Open the live app, grant notification permission, and install the PWA.
+
+If you skip step 2, users can still see in-app and browser notifications, but true background push will not fire when the app is closed.
 
 ## 🔧 Scripts
 

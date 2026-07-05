@@ -13,7 +13,10 @@ export default defineConfig(({ mode }) => {
       plugins: [
         react(),
         VitePWA({
-          registerType: 'autoUpdate',
+          strategies: 'injectManifest',
+          srcDir: 'src',
+          filename: 'sw.ts',
+          injectRegister: 'auto',
           includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
           manifest: {
             name: 'GroceSplit - Smart Grocery Tracker',
@@ -106,7 +109,8 @@ export default defineConfig(({ mode }) => {
         'process.env.FIREBASE_PROJECT_ID': JSON.stringify(env.FIREBASE_PROJECT_ID),
         'process.env.FIREBASE_STORAGE_BUCKET': JSON.stringify(env.FIREBASE_STORAGE_BUCKET),
         'process.env.FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.FIREBASE_MESSAGING_SENDER_ID),
-        'process.env.FIREBASE_APP_ID': JSON.stringify(env.FIREBASE_APP_ID)
+        'process.env.FIREBASE_APP_ID': JSON.stringify(env.FIREBASE_APP_ID),
+        'process.env.FIREBASE_VAPID_KEY': JSON.stringify(env.FIREBASE_VAPID_KEY)
       },
       resolve: {
         alias: {

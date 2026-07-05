@@ -10,5 +10,15 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if true;
     }
+
+    // Allow read/write access to payment history collection
+    match /paymentHistory/{entryId} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write access to FCM push token registrations
+    match /pushTokens/{tokenId} {
+      allow read, write: if true;
+    }
   }
 }
