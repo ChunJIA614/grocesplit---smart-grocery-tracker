@@ -104,7 +104,12 @@ export const RentalService = {
     // Save to Firestore if available
     if (db) {
       try {
-        await setDoc(doc(db, 'rentalExpenses', entry.id), entry);
+        const firestoreEntry = {
+          ...entry,
+          ...(entry.notes ? { notes: entry.notes } : {}),
+        };
+
+        await setDoc(doc(db, 'rentalExpenses', entry.id), firestoreEntry);
       } catch (error) {
         console.warn('Saved rental expense locally, but Firestore sync failed:', error);
       }
