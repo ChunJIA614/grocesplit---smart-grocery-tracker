@@ -15,17 +15,27 @@ type Listener<T> = (data: T) => void;
 
 const loadLocalAircond = (): AircondUsage[] => {
   const localData = localStorage.getItem(AIRCOND_STORAGE_KEY);
-  const parsed: AircondUsage[] = localData ? JSON.parse(localData) : [];
-  return parsed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  try {
+    const parsed: AircondUsage[] = localData ? JSON.parse(localData) : [];
+    return parsed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  } catch (error) {
+    console.warn('Invalid stored aircond data found. Resetting local cache.', error);
+    localStorage.removeItem(AIRCOND_STORAGE_KEY);
+    return [];
+  }
 };
 
 const saveLocalAircond = (entries: AircondUsage[]) => {
   localStorage.setItem(AIRCOND_STORAGE_KEY, JSON.stringify(entries));
   window.dispatchEvent(new CustomEvent('dormmate_aircond_updated'));
-  window.dispatchEvent(new StorageEvent('storage', {
-    key: AIRCOND_STORAGE_KEY,
-    newValue: JSON.stringify(entries)
-  }));
+  try {
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: AIRCOND_STORAGE_KEY,
+      newValue: JSON.stringify(entries)
+    }));
+  } catch {
+    window.dispatchEvent(new Event('storage'));
+  }
 };
 
 export const AircondService = {

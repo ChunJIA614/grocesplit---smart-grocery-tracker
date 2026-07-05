@@ -15,17 +15,27 @@ type Listener<T> = (data: T) => void;
 
 const loadLocalRental = (): DormExpense[] => {
   const localData = localStorage.getItem(RENTAL_STORAGE_KEY);
-  const parsed: DormExpense[] = localData ? JSON.parse(localData) : [];
-  return parsed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  try {
+    const parsed: DormExpense[] = localData ? JSON.parse(localData) : [];
+    return parsed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  } catch (error) {
+    console.warn('Invalid stored rental data found. Resetting local cache.', error);
+    localStorage.removeItem(RENTAL_STORAGE_KEY);
+    return [];
+  }
 };
 
 const saveLocalRental = (entries: DormExpense[]) => {
   localStorage.setItem(RENTAL_STORAGE_KEY, JSON.stringify(entries));
   window.dispatchEvent(new CustomEvent('dormmate_rental_updated'));
-  window.dispatchEvent(new StorageEvent('storage', {
-    key: RENTAL_STORAGE_KEY,
-    newValue: JSON.stringify(entries)
-  }));
+  try {
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: RENTAL_STORAGE_KEY,
+      newValue: JSON.stringify(entries)
+    }));
+  } catch {
+    window.dispatchEvent(new Event('storage'));
+  }
 };
 
 export const RentalService = {
