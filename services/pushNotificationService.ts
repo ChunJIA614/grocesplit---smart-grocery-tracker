@@ -25,10 +25,6 @@ export const PushNotificationService = {
     }
 
     const vapidKey = getVapidKey();
-    if (!vapidKey) {
-      console.warn('FIREBASE_VAPID_KEY is missing. Push notifications are not fully configured.');
-      return false;
-    }
 
     if (!('serviceWorker' in navigator)) {
       return false;
@@ -37,8 +33,8 @@ export const PushNotificationService = {
     const registration = await navigator.serviceWorker.ready;
     const messaging = getMessaging(app);
     const token = await getToken(messaging, {
-      vapidKey,
       serviceWorkerRegistration: registration,
+      ...(vapidKey ? { vapidKey } : {}),
     });
 
     if (!token) {
