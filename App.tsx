@@ -27,6 +27,7 @@ const App: React.FC = () => {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
   );
+  const [notificationStatus, setNotificationStatus] = useState<'idle' | 'registering' | 'ready' | 'error'>('idle');
   const [billAlerts, setBillAlerts] = useState<Array<{ id: string; title: string; body: string; createdAt: string }>>([]);
   const seenHistoryIdsRef = useRef<Set<string>>(new Set());
   const historyInitializedRef = useRef(false);
@@ -145,9 +146,12 @@ const App: React.FC = () => {
     let stopForegroundListener = () => undefined;
 
     void (async () => {
-      try {
-        if (notificationPermission === 'granted') {
-          await PushNotificationService.registerForPushNotifications(currentUser);
+      if (notificationPermission === 'granted') {
+        try {
+          setNotificationStatus('registering');
+          const registered = await PushNotificationService.registerForPushNotifications(currentUser);
+          if (!registered) throw new Error('FCM token was not registered');
+          setNotificationStatus('ready');
           stopForegroundListener = PushNotificationService.listenForForegroundMessages((payload) => {
             // Grocery bills already create the in-app alert from the payment history
             // listener. FCM handles rental and release alerts while this tab is open.
@@ -157,10 +161,16 @@ const App: React.FC = () => {
             const body = payload.data?.body || payload.notification?.body || 'There is an update in your dorm.';
             void showBrowserNotification({ title, body });
           });
+        } catch (error) {
+          setNotificationStatus('error');
+          console.warn('Push notification setup failed:', error);
         }
+      }
+
+      try {
         await PushNotificationService.publishAppUpdateIfNeeded();
       } catch (error) {
-        console.warn('Push notification setup failed:', error);
+        console.warn('App update notification could not be published:', error);
       }
     })();
 
@@ -196,7 +206,12 @@ const App: React.FC = () => {
     setNotificationPermission(permission);
 
     if (permission === 'granted' && currentUser) {
-      await PushNotificationService.registerForPushNotifications(currentUser).catch((error) => {
+      setNotificationStatus('registering');
+      await PushNotificationService.registerForPushNotifications(currentUser).then((registered) => {
+        if (!registered) throw new Error('FCM token was not registered');
+        setNotificationStatus('ready');
+      }).catch((error) => {
+        setNotificationStatus('error');
         console.warn('Push token registration failed after permission grant:', error);
       });
     }
@@ -635,6 +650,19 @@ const App: React.FC = () => {
             <Button onClick={handleEnableNotifications} className="whitespace-nowrap">
               <Wifi className="w-4 h-4" />
               Enable notifications
+            </Button>
+          </div>
+        )}
+
+        {notificationPermission === 'granted' && notificationStatus === 'error' && (
+          <div className="mb-5 rounded-[20px] border border-red-200 bg-red-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 className="font-semibold text-red-900">Notifications need setup</h3>
+              <p className="text-sm text-red-700">Allow DormMate to register this device, then try again.</p>
+            </div>
+            <Button onClick={handleEnableNotifications} className="whitespace-nowrap">
+              <RefreshCw className="w-4 h-4" />
+              Try again
             </Button>
           </div>
         )}
