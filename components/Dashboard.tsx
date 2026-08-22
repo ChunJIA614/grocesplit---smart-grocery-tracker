@@ -208,6 +208,9 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
             recentHistory.map(entry => {
               const isBill = entry.type === 'BILL_CREATED';
               const isCurrentUser = entry.actorId === currentUser.id;
+              const historyMessage = isBill
+                ? `${entry.actorName} created a split bill for ${entry.itemName}. Latest bill: $${entry.latestBillAmount.toFixed(2)}.`
+                : `${entry.actorName} paid $${entry.amount.toFixed(2)} for ${entry.itemName}.`;
 
               return (
                   <div key={entry.id} className="flex items-start justify-between gap-3 p-3 rounded-2xl bg-[#f2f2f7] border border-transparent hover:border-black/[0.06] transition-colors">
@@ -218,10 +221,10 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
                       </span>
                       <span className="text-sm font-semibold text-gray-800 truncate">{entry.itemName}</span>
                     </div>
-                    <p className="text-xs text-gray-500 leading-relaxed">{entry.message}</p>
+                    <p className="text-xs text-gray-500 leading-relaxed">{historyMessage}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-400">
                       <span>{isBill ? `Latest bill $${entry.latestBillAmount.toFixed(2)}` : `Paid $${entry.amount.toFixed(2)}`}</span>
-                      <span>Total overdue ${entry.totalOutstanding.toFixed(2)}</span>
+                      <span>Your remaining due ${stats.currentUserDebt.toFixed(2)}</span>
                       <span>{new Date(entry.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
