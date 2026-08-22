@@ -6,6 +6,54 @@ admin.initializeApp();
 const firestore = admin.firestore();
 const messaging = admin.messaging();
 
+const INVALID_TOKEN_ERRORS = new Set([
+  'messaging/invalid-registration-token',
+  'messaging/registration-token-not-registered',
+]);
+
+const getPushTokens = async () => {
+  const snapshot = await firestore.collection('pushTokens').get();
+  return [...new Set(snapshot.docs.map((doc) => doc.data().token).filter(Boolean))];
+};
+
+const broadcastPush = async ({ title, body, url = '/', data = {} }) => {
+  const tokens = await getPushTokens();
+  if (tokens.length === 0) {
+    console.log('No push tokens registered.');
+    return;
+  }
+
+  const invalidTokens = [];
+
+  // FCM multicast requests accept at most 500 registration tokens.
+  for (let index = 0; index < tokens.length; index += 500) {
+    const chunk = tokens.slice(index, index + 500);
+    const response = await messaging.sendEachForMulticast({
+      tokens: chunk,
+      // Data-only payloads are handled by src/sw.ts for one notification path.
+      data: {
+        title,
+        body,
+        url,
+        ...Object.fromEntries(Object.entries(data).map(([key, value]) => [key, String(value)])),
+      },
+    });
+
+    response.responses.forEach((result, responseIndex) => {
+      const code = result.error && result.error.code;
+      if (code && INVALID_TOKEN_ERRORS.has(code)) {
+        invalidTokens.push(chunk[responseIndex]);
+      } else if (!result.success) {
+        console.warn('Push notification delivery failed:', code || 'unknown error');
+      }
+    });
+  }
+
+  await Promise.all(
+    invalidTokens.map((token) => firestore.collection('pushTokens').doc(token).delete())
+  );
+};
+
 exports.sendSplitPaymentPush = onDocumentCreated('paymentHistory/{entryId}', async (event) => {
   const entry = event.data && event.data.data();
 
@@ -13,55 +61,49 @@ exports.sendSplitPaymentPush = onDocumentCreated('paymentHistory/{entryId}', asy
     return;
   }
 
-  const pushTokensSnapshot = await firestore.collection('pushTokens').get();
-  if (pushTokensSnapshot.empty) {
-    console.log('No push tokens registered.');
-    return;
-  }
-
-  const tokens = pushTokensSnapshot.docs
-    .map((doc) => doc.data().token)
-    .filter(Boolean);
-
-  if (tokens.length === 0) {
-    console.log('No valid push tokens found.');
-    return;
-  }
-
-  const title = `New split payment: ${entry.itemName}`;
-  const body = `Latest bill $${Number(entry.latestBillAmount || entry.amount || 0).toFixed(2)} | Total overdue $${Number(entry.totalOutstanding || 0).toFixed(2)}`;
-
-  const responses = await Promise.allSettled(
-    tokens.map((token) =>
-      messaging.send({
-        token,
-        notification: {
-          title,
-          body,
-        },
-        data: {
-          title,
-          body,
-          url: '/',
-          entryId: entry.id,
-          itemId: entry.itemId,
-        },
-      })
-    )
-  );
-
-  const invalidTokens = [];
-  responses.forEach((result, index) => {
-    if (result.status === 'rejected') {
-      const errorMessage = String(result.reason && result.reason.message ? result.reason.message : result.reason);
-      console.warn(`Failed to send push to token ${tokens[index]}:`, errorMessage);
-      if (errorMessage.includes('registration-token-not-registered') || errorMessage.includes('invalid-registration-token')) {
-        invalidTokens.push(tokens[index]);
-      }
-    }
+  await broadcastPush({
+    title: `New grocery bill: ${entry.itemName || 'Shared grocery'}`,
+    body: `Latest bill $${Number(entry.latestBillAmount || entry.amount || 0).toFixed(2)} | Total overdue $${Number(entry.totalOutstanding || 0).toFixed(2)}`,
+    data: {
+      kind: 'grocery-bill',
+      entryId: entry.id || event.params.entryId,
+      itemId: entry.itemId || '',
+    },
   });
+});
 
-  await Promise.all(
-    invalidTokens.map((token) => firestore.collection('pushTokens').doc(token).delete())
-  );
+exports.sendRentalExpensePush = onDocumentCreated('rentalExpenses/{expenseId}', async (event) => {
+  const expense = event.data && event.data.data();
+
+  if (!expense) {
+    return;
+  }
+
+  await broadcastPush({
+    title: `New shared bill: ${expense.title || 'Rental or utility bill'}`,
+    body: `Shared bill added for $${Number(expense.amount || 0).toFixed(2)}.`,
+    data: {
+      kind: 'rental-expense',
+      expenseId: expense.id || event.params.expenseId,
+    },
+  });
+});
+
+exports.sendAppUpdatePush = onDocumentCreated('appUpdates/{updateId}', async (event) => {
+  const update = event.data && event.data.data();
+
+  if (!update) {
+    return;
+  }
+
+  await broadcastPush({
+    title: update.title || 'DormMate updated',
+    body: update.body || 'A new version of DormMate is available.',
+    url: update.url || '/',
+    data: {
+      kind: 'app-update',
+      updateId: update.id || event.params.updateId,
+      version: update.version || '',
+    },
+  });
 });

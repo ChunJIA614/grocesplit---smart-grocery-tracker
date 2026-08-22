@@ -1,4 +1,4 @@
-import { getMessaging, getToken } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, MessagePayload } from 'firebase/messaging';
 import { doc, setDoc } from 'firebase/firestore';
 import { app, db } from './firebaseConfig';
 import { PushTokenRecord, User } from '../types';
@@ -49,5 +49,18 @@ export const PushNotificationService = {
     await setDoc(doc(db, 'pushTokens', token), record, { merge: true });
 
     return true;
+  },
+
+  listenForForegroundMessages(callback: (payload: MessagePayload) => void): () => void {
+    if (!app || !('Notification' in window) || Notification.permission !== 'granted') {
+      return () => undefined;
+    }
+
+    try {
+      return onMessage(getMessaging(app), callback);
+    } catch (error) {
+      console.warn('Foreground push listener unavailable:', error);
+      return () => undefined;
+    }
   },
 };

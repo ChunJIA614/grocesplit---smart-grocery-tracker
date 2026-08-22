@@ -143,6 +143,16 @@ const App: React.FC = () => {
     void PushNotificationService.registerForPushNotifications(currentUser).catch((error) => {
       console.warn('Push token registration failed:', error);
     });
+
+    return PushNotificationService.listenForForegroundMessages((payload) => {
+      // Grocery bills already create the in-app alert from the payment history
+      // listener. FCM handles rental and release alerts while this tab is open.
+      if (payload.data?.kind === 'grocery-bill') return;
+
+      const title = payload.data?.title || payload.notification?.title || 'DormMate update';
+      const body = payload.data?.body || payload.notification?.body || 'There is an update in your dorm.';
+      void showBrowserNotification({ title, body });
+    });
   }, [currentUser, notificationPermission]);
 
   const showBrowserNotification = async (alert: { title: string; body: string }) => {
@@ -607,8 +617,8 @@ const App: React.FC = () => {
         {notificationPermission !== 'granted' && 'Notification' in window && (
           <div className="mb-5 rounded-[20px] border border-blue-100 bg-[#eaf4ff] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h3 className="font-semibold text-blue-900">Enable split payment notifications</h3>
-              <p className="text-sm text-blue-700">Get alerted when a new bill is created, with overdue total and latest bill amount.</p>
+              <h3 className="font-semibold text-blue-900">Enable household notifications</h3>
+              <p className="text-sm text-blue-700">Get alerts for grocery bills, rental fees, and new app versions, even when DormMate is closed.</p>
             </div>
             <Button onClick={handleEnableNotifications} className="whitespace-nowrap">
               <Wifi className="w-4 h-4" />
