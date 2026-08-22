@@ -30,5 +30,10 @@ service cloud.firestore {
     match /rentalExpenses/{expenseId} {
       allow read, write: if true;
     }
+
+    // The first client that opens a new deployed build publishes its release event.
+    match /appUpdates/{updateId} {
+      allow read, write: if true;
+    }
   }
 }

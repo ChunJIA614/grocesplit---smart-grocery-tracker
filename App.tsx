@@ -140,23 +140,31 @@ const App: React.FC = () => {
   }, [currentUser, notificationPermission]);
 
   useEffect(() => {
-    if (!currentUser || notificationPermission !== 'granted') {
-      return;
-    }
+    if (!currentUser) return;
 
-    void PushNotificationService.registerForPushNotifications(currentUser).catch((error) => {
-      console.warn('Push token registration failed:', error);
-    });
+    let stopForegroundListener = () => undefined;
 
-    return PushNotificationService.listenForForegroundMessages((payload) => {
-      // Grocery bills already create the in-app alert from the payment history
-      // listener. FCM handles rental and release alerts while this tab is open.
-      if (payload.data?.kind === 'grocery-bill') return;
+    void (async () => {
+      try {
+        if (notificationPermission === 'granted') {
+          await PushNotificationService.registerForPushNotifications(currentUser);
+          stopForegroundListener = PushNotificationService.listenForForegroundMessages((payload) => {
+            // Grocery bills already create the in-app alert from the payment history
+            // listener. FCM handles rental and release alerts while this tab is open.
+            if (payload.data?.kind === 'grocery-bill') return;
 
-      const title = payload.data?.title || payload.notification?.title || 'DormMate update';
-      const body = payload.data?.body || payload.notification?.body || 'There is an update in your dorm.';
-      void showBrowserNotification({ title, body });
-    });
+            const title = payload.data?.title || payload.notification?.title || 'DormMate update';
+            const body = payload.data?.body || payload.notification?.body || 'There is an update in your dorm.';
+            void showBrowserNotification({ title, body });
+          });
+        }
+        await PushNotificationService.publishAppUpdateIfNeeded();
+      } catch (error) {
+        console.warn('Push notification setup failed:', error);
+      }
+    })();
+
+    return () => stopForegroundListener();
   }, [currentUser, notificationPermission]);
 
   const showBrowserNotification = async (alert: { title: string; body: string }) => {

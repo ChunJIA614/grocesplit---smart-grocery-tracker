@@ -4,8 +4,10 @@ import { app, db } from './firebaseConfig';
 import { PushTokenRecord, User } from '../types';
 
 const PUSH_TOKEN_STORAGE_KEY = 'dormmate_fcm_token';
+const APP_UPDATE_VERSION_STORAGE_KEY = 'dormmate_last_published_app_version';
 
 const getVapidKey = () => process.env.FIREBASE_VAPID_KEY || '';
+const getAppVersion = () => process.env.APP_VERSION || '';
 
 const buildPushTokenRecord = (token: string, user: User): PushTokenRecord => ({
   token,
@@ -61,6 +63,33 @@ export const PushNotificationService = {
     } catch (error) {
       console.warn('Foreground push listener unavailable:', error);
       return () => undefined;
+    }
+  },
+
+  async publishAppUpdateIfNeeded(): Promise<boolean> {
+    if (!db) return false;
+
+    const version = getAppVersion();
+    if (!version || localStorage.getItem(APP_UPDATE_VERSION_STORAGE_KEY) === version) {
+      return false;
+    }
+
+    const updateId = `release-${version.replace(/[^a-zA-Z0-9._-]/g, '-')}`;
+
+    try {
+      await setDoc(doc(db, 'appUpdates', updateId), {
+        id: updateId,
+        version,
+        title: 'DormMate updated',
+        body: 'A new version of DormMate is available.',
+        url: '/',
+        createdAt: new Date().toISOString(),
+      }, { merge: true });
+      localStorage.setItem(APP_UPDATE_VERSION_STORAGE_KEY, version);
+      return true;
+    } catch (error) {
+      console.warn('App update event could not be published:', error);
+      return false;
     }
   },
 };

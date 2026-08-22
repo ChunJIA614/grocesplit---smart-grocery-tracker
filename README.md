@@ -248,17 +248,9 @@ To fully enable background push notifications:
 2. Deploy Cloud Functions so grocery, rental, and update records trigger push sends.
 3. Deploy Hosting so the live app can register FCM tokens.
 4. Open the live app, grant notification permission, and install the PWA.
-5. After a successful Hosting deployment, publish the release event with Firebase
-   Admin credentials:
-
-   ```powershell
-   $env:APP_VERSION="2026.08.22"
-   npm --prefix functions run publish:update
-   ```
-
-   `GOOGLE_APPLICATION_CREDENTIALS` or Google Application Default Credentials must
-   be available for this command. Hosting deployment alone cannot create a secure
-   Firestore release event.
+5. The first signed-in client that opens the new build publishes one deterministic
+   release event to Firestore. Cloud Functions then sends the update notification
+   to all registered devices. No `gcloud` installation is required.
 
 If you skip step 2, users can still see in-app and browser notifications, but true background push will not fire when the app is closed.
 
@@ -270,7 +262,6 @@ If you skip step 2, users can still see in-app and browser notifications, but tr
 | `npm run build` | Build for production |
 | `npm run preview` | Preview production build |
 | `npm run generate-icons` | Generate PWA icons from source |
-| `npm --prefix functions run publish:update` | Publish an app-update push event after deployment |
 
 ## 📄 License
 

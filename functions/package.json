@@ -8,8 +8,7 @@
   },
   "scripts": {
     "lint": "echo \"No lint configured\"",
-    "build": "echo \"No build step required\"",
-    "publish:update": "node publish-app-update.js"
+    "build": "echo \"No build step required\""
   },
   "dependencies": {
     "firebase-admin": "^12.5.0",
