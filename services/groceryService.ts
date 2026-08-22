@@ -135,6 +135,7 @@ const createBillHistoryEntry = (item: GroceryItem, items: GroceryItem[]): Paymen
     latestBillAmount: item.totalPrice,
     createdAt: item.dateAdded,
     message: `${actorName} created a split bill for ${item.name}. Latest bill: $${item.totalPrice.toFixed(2)}. Total overdue: $${totalOutstanding.toFixed(2)}.`,
+    recipientIds: item.sharedBy,
   };
 };
 

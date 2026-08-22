@@ -112,7 +112,11 @@ const App: React.FC = () => {
         return;
       }
 
-      const newBillEntries = history.filter(entry => entry.type === 'BILL_CREATED' && !seenHistoryIdsRef.current.has(entry.id));
+      const newBillEntries = history.filter(entry =>
+        entry.type === 'BILL_CREATED'
+        && !seenHistoryIdsRef.current.has(entry.id)
+        && Boolean(currentUser && entry.recipientIds?.includes(currentUser.id))
+      );
       if (newBillEntries.length === 0) return;
 
       newBillEntries.forEach(entry => {
@@ -133,7 +137,7 @@ const App: React.FC = () => {
     });
 
     return unsubscribe;
-  }, [notificationPermission]);
+  }, [currentUser, notificationPermission]);
 
   useEffect(() => {
     if (!currentUser || notificationPermission !== 'granted') {

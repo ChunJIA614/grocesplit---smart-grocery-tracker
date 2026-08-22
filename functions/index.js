@@ -11,13 +11,22 @@ const INVALID_TOKEN_ERRORS = new Set([
   'messaging/registration-token-not-registered',
 ]);
 
-const getPushTokens = async () => {
+const getPushTokens = async (recipientIds) => {
   const snapshot = await firestore.collection('pushTokens').get();
-  return [...new Set(snapshot.docs.map((doc) => doc.data().token).filter(Boolean))];
+  const recipients = recipientIds && new Set(recipientIds);
+  return snapshot.docs
+    .filter((doc) => !recipients || recipients.has(doc.data().userId))
+    .map((doc) => doc.data().token)
+    .filter(Boolean);
 };
 
-const broadcastPush = async ({ title, body, url = '/', data = {} }) => {
-  const tokens = await getPushTokens();
+const sendPush = async ({ title, body, url = '/', data = {}, recipientIds }) => {
+  if (recipientIds && recipientIds.length === 0) {
+    console.log('No notification recipients assigned.');
+    return;
+  }
+
+  const tokens = [...new Set(await getPushTokens(recipientIds))];
   if (tokens.length === 0) {
     console.log('No push tokens registered.');
     return;
@@ -61,7 +70,7 @@ exports.sendSplitPaymentPush = onDocumentCreated('paymentHistory/{entryId}', asy
     return;
   }
 
-  await broadcastPush({
+  await sendPush({
     title: `New grocery bill: ${entry.itemName || 'Shared grocery'}`,
     body: `Latest bill $${Number(entry.latestBillAmount || entry.amount || 0).toFixed(2)} | Total overdue $${Number(entry.totalOutstanding || 0).toFixed(2)}`,
     data: {
@@ -69,6 +78,8 @@ exports.sendSplitPaymentPush = onDocumentCreated('paymentHistory/{entryId}', asy
       entryId: entry.id || event.params.entryId,
       itemId: entry.itemId || '',
     },
+    // Missing recipient data must not fall back to a household-wide payment alert.
+    recipientIds: Array.isArray(entry.recipientIds) ? entry.recipientIds : [],
   });
 });
 
@@ -79,13 +90,15 @@ exports.sendRentalExpensePush = onDocumentCreated('rentalExpenses/{expenseId}', 
     return;
   }
 
-  await broadcastPush({
+  await sendPush({
     title: `New shared bill: ${expense.title || 'Rental or utility bill'}`,
     body: `Shared bill added for $${Number(expense.amount || 0).toFixed(2)}.`,
     data: {
       kind: 'rental-expense',
       expenseId: expense.id || event.params.expenseId,
     },
+    // Missing recipient data must not fall back to a household-wide payment alert.
+    recipientIds: Array.isArray(expense.splitWithIds) ? expense.splitWithIds : [],
   });
 });
 
@@ -96,7 +109,7 @@ exports.sendAppUpdatePush = onDocumentCreated('appUpdates/{updateId}', async (ev
     return;
   }
 
-  await broadcastPush({
+  await sendPush({
     title: update.title || 'DormMate updated',
     body: update.body || 'A new version of DormMate is available.',
     url: update.url || '/',
