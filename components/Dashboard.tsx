@@ -45,21 +45,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
   const [isClearing, setIsClearing] = useState(false);
 
   const handleMarkPaid = (item: GroceryItem) => {
-    GroceryService.markSharePaid(item.id, currentUser.id, true);
-  };
-
-  const handleClearAllOutstanding = async () => {
-    if (stats.currentUserDebt <= 0) return;
-    if (!confirm('Are you sure you want to clear all your outstanding payments?')) return;
-
-    setIsClearing(true);
-    try {
-      for (const { item } of stats.currentUserUnpaidItems) {
-        await GroceryService.markSharePaid(item.id, currentUser.id, true);
-      }
-    } finally {
-      setIsClearing(false);
-    }
+    void GroceryService.markSharePaid(item.id, currentUser, true);
   };
 
   const handleClearMyOutstanding = async () => {
@@ -68,9 +54,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
 
     setIsClearing(true);
     try {
-      for (const { item } of stats.currentUserUnpaidItems) {
-        await GroceryService.markSharePaid(item.id, currentUser.id, true);
-      }
+      await GroceryService.clearUserOutstandingPayments(currentUser);
     } finally {
       setIsClearing(false);
     }

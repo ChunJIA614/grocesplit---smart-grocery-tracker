@@ -1,22 +1,18 @@
 import { GroceryItem, ItemStatus, PaymentHistoryEntry, User } from '../types';
 import { db } from './firebaseConfig';
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
-  getDoc,
   onSnapshot,
   query,
   setDoc,
+  writeBatch,
 } from 'firebase/firestore';
 
-// --- Default Data for Local Fallback ---
-const DEFAULT_USERS: User[] = [
-  { id: 'u1', name: 'Me', avatarColor: 'bg-blue-600' },
-  { id: 'u2', name: 'Alice', avatarColor: 'bg-purple-600' },
-  { id: 'u3', name: 'Bob', avatarColor: 'bg-green-600' },
-  { id: 'u4', name: 'Charlie', avatarColor: 'bg-yellow-500' },
-];
+const DEFAULT_USERS: User[] = [];
 
 const ITEMS_STORAGE_KEY = 'dormmate_items';
 const USERS_STORAGE_KEY = 'dormmate_users';
@@ -142,25 +138,30 @@ const createBillHistoryEntry = (item: GroceryItem, items: GroceryItem[]): Paymen
   };
 };
 
-const createPaymentHistoryEntry = (item: GroceryItem, userId: string, amount: number, totalOutstanding: number): PaymentHistoryEntry => {
-  const users = loadLocalUsers();
-  const actorName = users.find(user => user.id === userId)?.name || 'Unknown';
-
+const createPaymentHistoryEntry = (item: GroceryItem, user: User, amount: number, totalOutstanding: number): PaymentHistoryEntry => {
   return {
-    id: `payment-${item.id}-${userId}-${Date.now()}`,
+    id: `payment-${item.id}-${user.id}-${Date.now()}`,
     type: 'PAYMENT_MADE',
     itemId: item.id,
     itemName: item.name,
-    actorId: userId,
-    actorName,
+    actorId: user.id,
+    actorName: user.name,
     amount,
     shareCount: item.sharedBy.length,
     totalOutstanding,
     latestBillAmount: item.totalPrice,
     createdAt: new Date().toISOString(),
-    message: `${actorName} paid $${amount.toFixed(2)} for ${item.name}. Total overdue is now $${totalOutstanding.toFixed(2)}.`,
+    message: `${user.name} paid $${amount.toFixed(2)} for ${item.name}. Total overdue is now $${totalOutstanding.toFixed(2)}.`,
   };
 };
+
+export const markGroceryItemsPaid = (items: GroceryItem[], userId: string): GroceryItem[] => items.map(item => {
+  if (item.status !== ItemStatus.USED || !item.sharedBy.includes(userId) || item.paidBy?.includes(userId)) {
+    return item;
+  }
+
+  return { ...item, paidBy: [...(item.paidBy || []), userId] };
+});
 
 export const GroceryService = {
   
@@ -224,14 +225,9 @@ export const GroceryService = {
       console.log("Firebase DB available, subscribing to users collection...");
       const q = query(collection(db, 'users'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const users = snapshot.docs.map(doc => doc.data() as User);
-        if (users.length === 0) {
-           // Save default users and also call onUpdate immediately
-           DEFAULT_USERS.forEach(u => GroceryService.saveUser(u));
-           onUpdate(DEFAULT_USERS);
-        } else {
-           onUpdate(users);
-        }
+        const users = snapshot.docs.map(docSnap => ({ ...docSnap.data(), id: docSnap.id }) as User);
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+        onUpdate(users);
       }, (error) => {
         console.error("Firebase users subscription error:", error);
         // Fallback to local storage on error
@@ -397,7 +393,7 @@ export const GroceryService = {
     }
   },
 
-  markSharePaid: async (itemId: string, userId: string, isPaid: boolean) => {
+  markSharePaid: async (itemId: string, user: User, isPaid: boolean) => {
     // Update localStorage first for immediate feedback
     const localItems = loadLocalItems();
     const targetBefore = localItems.find(i => i.id === itemId);
@@ -405,9 +401,9 @@ export const GroceryService = {
       if (i.id === itemId) {
         let paidBy = i.paidBy || [];
         if (isPaid) {
-          if (!paidBy.includes(userId)) paidBy = [...paidBy, userId];
+          if (!paidBy.includes(user.id)) paidBy = [...paidBy, user.id];
         } else {
-          paidBy = paidBy.filter(id => id !== userId);
+          paidBy = paidBy.filter(id => id !== user.id);
         }
         return { ...i, paidBy };
       }
@@ -416,31 +412,83 @@ export const GroceryService = {
     GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, newLocalItems);
 
     const updatedTarget = newLocalItems.find(i => i.id === itemId);
-    if (isPaid && targetBefore && updatedTarget && !(targetBefore.paidBy || []).includes(userId)) {
-      const users = loadLocalUsers();
-      const { totalOutstanding } = calculateDebtSnapshot(newLocalItems, users);
-      const splitCount = updatedTarget.sharedBy.length || 1;
-      const amount = updatedTarget.totalPrice / splitCount;
-      await GroceryService.savePaymentHistoryEntry(createPaymentHistoryEntry(updatedTarget, userId, amount, totalOutstanding));
+    const paymentEntry = isPaid && targetBefore && updatedTarget && !(targetBefore.paidBy || []).includes(user.id)
+      ? createPaymentHistoryEntry(
+          updatedTarget,
+          user,
+          updatedTarget.totalPrice / (updatedTarget.sharedBy.length || 1),
+          calculateDebtSnapshot(newLocalItems, loadLocalUsers()).totalOutstanding
+        )
+      : null;
+
+    if (paymentEntry) {
+      upsertHistoryEntry(paymentEntry);
     }
     
     if (db) {
       try {
-        const ref = doc(db, 'items', itemId);
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          const data = snap.data() as GroceryItem;
-          let paidBy = data.paidBy || [];
-          if (isPaid) {
-            if (!paidBy.includes(userId)) paidBy.push(userId);
-          } else {
-            paidBy = paidBy.filter(id => id !== userId);
-          }
-          await setDoc(ref, { paidBy }, { merge: true });
-          console.log("markSharePaid updated in Firebase:", itemId);
+        const batch = writeBatch(db);
+        batch.set(
+          doc(db, 'items', itemId),
+          { paidBy: isPaid ? arrayUnion(user.id) : arrayRemove(user.id) },
+          { merge: true }
+        );
+        if (paymentEntry) {
+          batch.set(doc(db, 'paymentHistory', paymentEntry.id), paymentEntry);
         }
+        await batch.commit();
+        console.log("markSharePaid updated in Firebase:", itemId);
       } catch (e) {
         console.warn("Firebase markSharePaid failed:", e);
+      }
+    }
+  },
+
+  clearUserOutstandingPayments: async (user: User) => {
+    const localItems = loadLocalItems();
+    const unpaidItems = localItems.filter(item =>
+      item.status === ItemStatus.USED
+      && item.sharedBy.includes(user.id)
+      && !(item.paidBy || []).includes(user.id)
+    );
+
+    if (unpaidItems.length === 0) return;
+
+    const updatedItems = markGroceryItemsPaid(localItems, user.id);
+    GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, updatedItems);
+
+    const amount = unpaidItems.reduce(
+      (total, item) => total + item.totalPrice / (item.sharedBy.length || 1),
+      0
+    );
+    const totalOutstanding = calculateDebtSnapshot(updatedItems, loadLocalUsers()).totalOutstanding;
+    const paymentEntry: PaymentHistoryEntry = {
+      id: `payment-all-${user.id}-${Date.now()}`,
+      type: 'PAYMENT_MADE',
+      itemId: 'all-outstanding',
+      itemName: `${unpaidItems.length} grocery item${unpaidItems.length === 1 ? '' : 's'}`,
+      actorId: user.id,
+      actorName: user.name,
+      amount,
+      shareCount: unpaidItems.length,
+      totalOutstanding,
+      latestBillAmount: amount,
+      createdAt: new Date().toISOString(),
+      message: `${user.name} cleared ${unpaidItems.length} grocery payment${unpaidItems.length === 1 ? '' : 's'} totalling $${amount.toFixed(2)}. Total overdue is now $${totalOutstanding.toFixed(2)}.`,
+    };
+    upsertHistoryEntry(paymentEntry);
+
+    if (db) {
+      try {
+        const batch = writeBatch(db);
+        unpaidItems.forEach(item => {
+          batch.set(doc(db, 'items', item.id), { paidBy: arrayUnion(user.id) }, { merge: true });
+        });
+        batch.set(doc(db, 'paymentHistory', paymentEntry.id), paymentEntry);
+        await batch.commit();
+        console.log("User outstanding payments cleared in Firebase:", user.id);
+      } catch (e) {
+        console.warn("Firebase clearUserOutstandingPayments failed:", e);
       }
     }
   },
@@ -499,36 +547,6 @@ export const GroceryService = {
         console.log("User deleted from Firebase:", id);
       } catch (e) {
         console.warn("Firebase deleteUser failed:", e);
-      }
-    }
-  },
-
-  clearAllOutstandingPayments: async () => {
-    // Mark all items as paid by all users who share them
-    const localData = localStorage.getItem(ITEMS_STORAGE_KEY);
-    const localItems: GroceryItem[] = localData ? JSON.parse(localData) : [];
-    
-    const updatedItems = localItems.map(item => {
-      if (item.status === ItemStatus.USED && item.sharedBy.length > 0) {
-        // Set paidBy to include all users who shared the item
-        return { ...item, paidBy: [...item.sharedBy] };
-      }
-      return item;
-    });
-    
-    GroceryService._triggerLocalUpdate(ITEMS_STORAGE_KEY, updatedItems);
-    
-    if (db) {
-      try {
-        // Update each item in Firebase
-        const updatePromises = updatedItems
-          .filter(item => item.status === ItemStatus.USED && item.sharedBy.length > 0)
-          .map(item => setDoc(doc(db, 'items', item.id), { paidBy: item.paidBy }, { merge: true }));
-        
-        await Promise.all(updatePromises);
-        console.log("All outstanding payments cleared in Firebase");
-      } catch (e) {
-        console.warn("Firebase clearAllOutstandingPayments failed:", e);
       }
     }
   },

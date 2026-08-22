@@ -17,6 +17,7 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
   const [splitWithIds, setSplitWithIds] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPayingAll, setIsPayingAll] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filterMonth, setFilterMonth] = useState<string>('all'); // "all" or "YYYY-MM"
 
@@ -149,26 +150,18 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
     }
   };
 
-  // Toggle user's paid status on a specific expense
-  const togglePaidStatus = async (expense: DormExpense, userId: string) => {
-    const paidList = expense.paidByUserIds ? [...expense.paidByUserIds] : [];
-    let updatedPaidList: string[];
+  const handlePayAll = async () => {
+    const amountDue = overdueBalances[currentUser.id] || 0;
+    if (amountDue <= 0) return;
+    if (!window.confirm(`Mark all your rental and shared bill payments ($${amountDue.toFixed(2)}) as paid?`)) return;
 
-    if (paidList.includes(userId)) {
-      updatedPaidList = paidList.filter(id => id !== userId);
-    } else {
-      updatedPaidList = [...paidList, userId];
-    }
-
-    const updatedExpense: DormExpense = {
-      ...expense,
-      paidByUserIds: updatedPaidList
-    };
-
+    setIsPayingAll(true);
     try {
-      await RentalService.saveExpense(updatedExpense);
+      await RentalService.markAllExpensesPaid(expenses, currentUser.id);
     } catch (error) {
-      alert('Error updating payment status. Please try again.');
+      alert('Error updating rental payments. Please try again.');
+    } finally {
+      setIsPayingAll(false);
     }
   };
 
@@ -187,7 +180,13 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {(overdueBalances[currentUser.id] || 0) > 0 && (
+              <Button onClick={handlePayAll} isLoading={isPayingAll} className="rounded-xl text-xs whitespace-nowrap">
+                <DollarSign className="w-4 h-4" />
+                Pay All (${(overdueBalances[currentUser.id] || 0).toFixed(2)})
+              </Button>
+            )}
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1">
               <ListFilter className="w-3.5 h-3.5" /> Filter Month:
             </span>
@@ -444,10 +443,10 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                       </div>
                     </div>
 
-                    {/* Roommates Checklist (Tick status directly here) */}
+                    {/* Roommate payment status */}
                     <div className="mt-4 pt-3.5 border-t border-gray-150">
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                        Roommates Paid Status (Click your own badge to toggle):
+                        Roommates Paid Status
                       </p>
                       
                       <div className="flex flex-wrap gap-2">
@@ -456,21 +455,14 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                           const isCurrentUser = u.id === currentUser.id;
                           
                           return (
-                            <button
+                            <div
                               key={u.id}
-                              onClick={() => {
-                                if (!isCurrentUser) {
-                                  alert(`Only ${u.name} can toggle their own payment status.`);
-                                  return;
-                                }
-                                togglePaidStatus(exp, u.id);
-                              }}
-                              className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-xl border font-semibold transition-all shadow-sm ${
+                              className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-xl border font-semibold shadow-sm ${
                                 isPaid
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200' + (isCurrentUser ? ' hover:bg-emerald-100 cursor-pointer' : ' cursor-default opacity-85')
-                                  : 'bg-rose-50 text-rose-700 border-rose-200' + (isCurrentUser ? ' hover:bg-rose-100 cursor-pointer' : ' cursor-default opacity-85')
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200'
                               }`}
-                              title={isCurrentUser ? `Click to mark as ${isPaid ? 'Unpaid' : 'Paid'}` : `${u.name}'s payment status`}
+                              title={`${u.name}'s payment status`}
                             >
                               <div className={`w-2.5 h-2.5 rounded-full ${u.avatarColor || 'bg-blue-600'} shrink-0`} />
                               <span>{u.name} {isCurrentUser ? '(You)' : ''}</span>
@@ -479,7 +471,7 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                               ) : (
                                 <div className="w-3.5 h-3.5 rounded-full border border-rose-400/50 shrink-0" />
                               )}
-                            </button>
+                            </div>
                           );
                         })}
                       </div>

@@ -1,12 +1,14 @@
 import { DormExpense } from '../types';
 import { db } from './firebaseConfig';
 import {
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
   onSnapshot,
   query,
   setDoc,
+  writeBatch,
 } from 'firebase/firestore';
 
 const RENTAL_STORAGE_KEY = 'dormmate_rental_expenses';
@@ -37,6 +39,14 @@ const saveLocalRental = (entries: DormExpense[]) => {
     window.dispatchEvent(new Event('storage'));
   }
 };
+
+export const markRentalExpensesPaid = (expenses: DormExpense[], userId: string): DormExpense[] => expenses.map(expense => {
+  if (!expense.splitWithIds.includes(userId) || expense.paidByUserIds?.includes(userId)) {
+    return expense;
+  }
+
+  return { ...expense, paidByUserIds: [...(expense.paidByUserIds || []), userId] };
+});
 
 export const RentalService = {
   subscribeExpenses: (onUpdate: Listener<DormExpense[]>) => {
@@ -112,6 +122,32 @@ export const RentalService = {
         await setDoc(doc(db, 'rentalExpenses', entry.id), firestoreEntry);
       } catch (error) {
         console.warn('Saved rental expense locally, but Firestore sync failed:', error);
+      }
+    }
+  },
+
+  markAllExpensesPaid: async (expenses: DormExpense[], userId: string) => {
+    const unpaidExpenses = expenses.filter(expense =>
+      expense.splitWithIds.includes(userId) && !expense.paidByUserIds?.includes(userId)
+    );
+    if (unpaidExpenses.length === 0) return;
+
+    const list = markRentalExpensesPaid(loadLocalRental(), userId);
+    saveLocalRental(list);
+
+    if (db) {
+      try {
+        const batch = writeBatch(db);
+        unpaidExpenses.forEach(expense => {
+          batch.set(
+            doc(db, 'rentalExpenses', expense.id),
+            { paidByUserIds: arrayUnion(userId) },
+            { merge: true }
+          );
+        });
+        await batch.commit();
+      } catch (error) {
+        console.warn('Updated rental payments locally, but Firestore sync failed:', error);
       }
     }
   },
