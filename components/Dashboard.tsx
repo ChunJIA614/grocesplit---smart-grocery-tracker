@@ -4,6 +4,8 @@ import { GroceryItem, ItemStatus, PaymentHistoryEntry, User } from '../types';
 import { calculateDebtSnapshot, GroceryService } from '../services/groceryService';
 import { Check, CheckCircle2, Banknote, Clock3, ReceiptText, Wallet } from 'lucide-react';
 
+const CHART_COLORS = ['#0a84ff', '#0077ed', '#2563eb', '#1d4ed8', '#1e40af', '#60a5fa'];
+
 interface Props {
   items: GroceryItem[];
   users: User[];
@@ -30,10 +32,10 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
       }
     });
 
-    const chartData = users.map(u => ({
+    const chartData = users.map((u, index) => ({
       name: u.name,
       amount: debtMap[u.id],
-      color: u.avatarColor
+      color: CHART_COLORS[index % CHART_COLORS.length]
     }));
 
     const fridgeItems = items.filter(i => i.status === ItemStatus.FRIDGE);
@@ -60,7 +62,6 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
     }
   };
 
-  const CHART_COLORS = ['#0d6efd', '#6610f2', '#198754', '#ffc107', '#dc3545', '#0dcaf0'];
   const recentHistory = paymentHistory.slice(0, 8);
   const myPaymentHistory = paymentHistory.filter(entry => entry.actorId === currentUser.id && entry.type === 'PAYMENT_MADE');
 
@@ -83,7 +84,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
         <button
           onClick={handleClearMyOutstanding}
           disabled={isClearing}
-          className="w-full min-h-12 px-4 bg-[#30b06a] hover:bg-[#28995b] text-white font-semibold rounded-[18px] shadow-sm shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full min-h-12 px-4 bg-[#0a84ff] hover:bg-[#0077ed] text-white font-semibold rounded-[18px] shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Banknote className="w-5 h-5" />
           {isClearing ? 'Clearing...' : `Clear My Outstanding ($${stats.currentUserDebt.toFixed(2)})`}
@@ -95,8 +96,8 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
         {/* Unpaid Items List (Tick Paid) */}
         <div className="bg-white p-4 sm:p-6 rounded-[24px] shadow-sm border border-black/[0.06]">
              <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-               <div className="w-8 h-8 rounded-xl bg-[#e7f8ee] flex items-center justify-center">
-               <CheckCircle2 className="w-4 h-4 text-green-600" />
+               <div className="w-8 h-8 rounded-xl bg-[#eaf4ff] flex items-center justify-center">
+               <CheckCircle2 className="w-4 h-4 text-[#0a84ff]" />
              </div>
              Tick to Pay
            </h3>
@@ -118,7 +119,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
                       <button 
                         onClick={() => handleMarkPaid(item)}
                          aria-label={`Mark ${item.name} as paid`}
-                         className="w-11 h-11 rounded-xl border-2 border-[#30b06a] text-[#30b06a] hover:bg-[#30b06a] hover:text-white flex items-center justify-center"
+                         className="w-11 h-11 rounded-xl border-2 border-[#0a84ff] text-[#0a84ff] hover:bg-[#0a84ff] hover:text-white flex items-center justify-center"
                         title="Mark as Paid"
                       >
                         <Check className="w-5 h-5" />
@@ -158,7 +159,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
                     />
                     <Bar dataKey="amount" radius={[0, 4, 4, 0]} barSize={20}>
                         {stats.chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color ? entry.color.replace('bg-', '').replace('-600', '').replace('-500', '') : CHART_COLORS[index % CHART_COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                     </Bar>
                     </BarChart>
@@ -173,7 +174,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-black/[0.06]">
              {stats.chartData.map((d, i) => (
                <div key={d.name} className="flex items-center gap-1.5 text-xs text-gray-600">
-                 <div className={`w-2 h-2 rounded-full ${d.color}`}></div>
+                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }}></div>
                  <span>{d.name}: <strong>${d.amount.toFixed(2)}</strong></span>
                </div>
              ))}
@@ -212,7 +213,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
                   <div key={entry.id} className="flex items-start justify-between gap-3 p-3 rounded-2xl bg-[#f2f2f7] border border-transparent hover:border-black/[0.06] transition-colors">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isBill ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                         {isBill ? 'Split Bill' : 'Payment'}
                       </span>
                       <span className="text-sm font-semibold text-gray-800 truncate">{entry.itemName}</span>
@@ -225,7 +226,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${isBill ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'}`}>
+                    <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
                       {isBill ? <Wallet className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
                       {isCurrentUser ? 'You' : entry.actorName}
                     </div>

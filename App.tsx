@@ -391,7 +391,7 @@ const App: React.FC = () => {
       
       {/* Offline Indicator */}
       {!isOnline && (
-        <div className="fixed top-0 left-0 right-0 bg-[#ff9f0a] text-[#1d1d1f] p-2 flex justify-center items-center z-40 text-sm gap-2 font-semibold">
+        <div className="fixed top-0 left-0 right-0 bg-[#0a84ff] text-white p-2 flex justify-center items-center z-40 text-sm gap-2 font-semibold">
           <WifiOff className="w-4 h-4" />
           <span>You're offline. Changes will sync when you reconnect.</span>
         </div>
@@ -407,16 +407,16 @@ const App: React.FC = () => {
             <h1 className="text-lg font-bold">DormMate</h1>
             <div className="flex items-center gap-1">
               {isOnline ? (
-                <><Wifi className="w-3 h-3 text-[#30b06a]" /><span className="text-[10px] text-[#6e6e73]">Synced</span></>
+                <><Wifi className="w-3 h-3 text-[#0a84ff]" /><span className="text-[10px] text-[#6e6e73]">Synced</span></>
               ) : (
-                <><WifiOff className="w-3 h-3 text-[#ff9f0a]" /><span className="text-[10px] text-[#6e6e73]">Offline</span></>
+                <><WifiOff className="w-3 h-3 text-[#0a84ff]" /><span className="text-[10px] text-[#6e6e73]">Offline</span></>
               )}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button 
-            className={`w-10 h-10 rounded-full ${currentUser.avatarColor} text-white font-bold text-sm flex items-center justify-center shadow-sm border-2 border-white`}
+            className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center shadow-sm border-2 border-white"
             onClick={() => setUserModalOpen(true)}
           >
               {currentUser.name[0]}
@@ -435,13 +435,13 @@ const App: React.FC = () => {
           <div className="mt-2 flex items-center gap-2 text-xs">
              {db && isOnline ? (
                <>
-                 <Cloud className="w-3 h-3 text-green-500" />
-                 <span className="text-green-600">Cloud Sync Active</span>
+                 <Cloud className="w-3 h-3 text-[#0a84ff]" />
+                 <span className="text-[#0077ed]">Cloud Sync Active</span>
                </>
              ) : db && !isOnline ? (
                <>
-                 <WifiOff className="w-3 h-3 text-yellow-500" />
-                 <span className="text-yellow-600">Offline - Will sync when online</span>
+                 <WifiOff className="w-3 h-3 text-[#0a84ff]" />
+                 <span className="text-[#0077ed]">Offline - Will sync when online</span>
                </>
              ) : (
                <>
@@ -477,7 +477,7 @@ const App: React.FC = () => {
               activeTab === 'aircond' ? 'bg-[#eaf4ff] text-[#0077ed] font-semibold' : 'text-gray-600 hover:bg-[#f2f2f7]'
             }`}
           >
-            <Wind className="w-5 h-5 text-sky-500" />
+            <Wind className="w-5 h-5 text-[#0a84ff]" />
             AC Usage
           </button>
           <button 
@@ -486,19 +486,19 @@ const App: React.FC = () => {
               activeTab === 'rental' ? 'bg-[#eaf4ff] text-[#0077ed] font-semibold' : 'text-gray-600 hover:bg-[#f2f2f7]'
             }`}
           >
-            <CreditCard className="w-5 h-5 text-amber-500" />
+            <CreditCard className="w-5 h-5 text-[#0a84ff]" />
             Dorm Rent & Bills
           </button>
         </nav>
 
         <div className="p-4 border-t border-black/[0.06] bg-[#f2f2f7] space-y-1">
           <div className="flex items-center gap-3 px-2 py-2">
-            <div className={`w-8 h-8 rounded-full ${currentUser.avatarColor} text-white flex items-center justify-center text-xs font-bold shadow-sm`}>
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
                {currentUser.name[0]}
             </div>
             <div className="text-sm overflow-hidden">
               <p className="font-bold text-gray-800 truncate">{currentUser.name}</p>
-              <button onClick={handleLogout} className="text-xs text-red-500 hover:underline flex items-center gap-1">
+              <button onClick={handleLogout} className="text-xs text-[#0077ed] hover:underline flex items-center gap-1">
                  <LogOut className="w-3 h-3" /> Sign Out
               </button>
             </div>
@@ -637,7 +637,7 @@ const App: React.FC = () => {
             onClick={() => setActiveTab('aircond')}
             className={`flex-1 flex flex-col items-center py-3 ${activeTab === 'aircond' ? 'text-[#0a84ff]' : 'text-[#8e8e93]'}`}
           >
-            <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'aircond' ? 'bg-sky-100 text-sky-600' : ''}`}>
+            <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'aircond' ? 'bg-[#eaf4ff] text-[#0077ed]' : ''}`}>
               <Wind className="w-5 h-5" />
             </div>
             <span className="text-[9px] mt-0.5 font-bold">AC</span>
@@ -647,7 +647,7 @@ const App: React.FC = () => {
             onClick={() => setActiveTab('rental')}
             className={`flex-1 flex flex-col items-center py-3 ${activeTab === 'rental' ? 'text-[#0a84ff]' : 'text-[#8e8e93]'}`}
           >
-            <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'rental' ? 'bg-amber-100 text-amber-600' : ''}`}>
+            <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'rental' ? 'bg-[#eaf4ff] text-[#0077ed]' : ''}`}>
               <CreditCard className="w-5 h-5" />
             </div>
             <span className="text-[9px] mt-0.5 font-bold">Bills</span>
@@ -655,7 +655,7 @@ const App: React.FC = () => {
           
           <button 
             onClick={handleLogout}
-            className="flex-1 flex flex-col items-center py-3 text-[#8e8e93] active:text-[#ff3b30]"
+            className="flex-1 flex flex-col items-center py-3 text-[#8e8e93] active:text-[#0077ed]"
           >
             <div className="p-1.5">
               <LogOut className="w-5 h-5" />

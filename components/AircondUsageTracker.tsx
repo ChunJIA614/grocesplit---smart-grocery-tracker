@@ -134,7 +134,7 @@ export const AircondUsageTracker: React.FC<AircondUsageTrackerProps> = ({ users,
                 return (
                   <div key={user.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${user.avatarColor || 'bg-blue-600'}`}></div>
+                      <div className="w-3 h-3 rounded-full bg-blue-600"></div>
                       <span className="text-sm font-medium text-gray-700">{user.name}</span>
                     </div>
                     <span className="text-sm font-bold text-gray-900">{userMonthlyHours.toFixed(1)} hrs</span>
@@ -156,11 +156,11 @@ export const AircondUsageTracker: React.FC<AircondUsageTrackerProps> = ({ users,
         <div className="bg-white p-5 rounded-[24px] shadow-sm border border-black/[0.06] flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold uppercase text-emerald-600 flex items-center gap-2">
+              <h3 className="text-sm font-bold uppercase text-blue-600 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
                 Lifetime Summary
               </h3>
-              <span className="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-semibold">
+              <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-semibold">
                 Cumulative Usage
               </span>
             </div>
@@ -171,7 +171,7 @@ export const AircondUsageTracker: React.FC<AircondUsageTrackerProps> = ({ users,
                 return (
                   <div key={user.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${user.avatarColor || 'bg-blue-600'}`}></div>
+                      <div className="w-3 h-3 rounded-full bg-blue-600"></div>
                       <span className="text-sm font-medium text-gray-700">{user.name}</span>
                     </div>
                     <span className="text-sm font-bold text-gray-900">{userOverallHours.toFixed(1)} hrs</span>
@@ -301,7 +301,7 @@ export const AircondUsageTracker: React.FC<AircondUsageTrackerProps> = ({ users,
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Avatar */}
-                      <div className={`w-9 h-9 rounded-full ${user?.avatarColor || 'bg-blue-600'} text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm`}>
+                      <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
                         {item.userName[0]}
                       </div>
                       
@@ -328,7 +328,7 @@ export const AircondUsageTracker: React.FC<AircondUsageTrackerProps> = ({ users,
                       </span>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-[#0077ed] hover:bg-[#eaf4ff] rounded-lg transition-colors"
                         title="Delete record"
                       >
                         <Trash2 className="w-4 h-4" />

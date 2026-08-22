@@ -29,7 +29,7 @@ export const LoginScreen: React.FC<Props> = ({ users, onSelectUser, onManageUser
                 onClick={() => onSelectUser(user)}
                 className="w-full min-h-16 flex items-center gap-3 px-3 rounded-[18px] bg-white hover:bg-[#f2f2f7] active:bg-[#e5e5ea] text-left"
               >
-                <div className={`w-11 h-11 rounded-full ${user.avatarColor} text-white flex items-center justify-center text-base font-bold shadow-sm`}>
+                <div className="w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center text-base font-bold shadow-sm">
                    {user.name[0]?.toUpperCase()}
                 </div>
                 <span className="font-semibold text-gray-900 text-sm flex-1">{user.name}</span>

@@ -171,7 +171,7 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
       <div className="bg-white p-5 rounded-[24px] shadow-sm border border-black/[0.06]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
+            <div className="p-2 bg-[#eaf4ff] rounded-xl text-[#0a84ff]">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
@@ -209,7 +209,7 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
       {/* OVERDUE AMOUNT LIST ON TOP */}
       <div className="bg-[#1d1d1f] text-white p-5 rounded-[24px] shadow-xl shadow-black/10 border border-black">
         <h3 className="text-xs font-bold uppercase text-white/60 flex items-center gap-2 mb-4">
-          <AlertCircle className="w-4 h-4 text-rose-400" />
+          <AlertCircle className="w-4 h-4 text-blue-300" />
           Roommate Overdue Balances (Dorm & Bills Only)
         </h3>
 
@@ -223,12 +223,12 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                 key={user.id} 
                 className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
                   isCleared 
-                    ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-200' 
-                    : 'bg-rose-950/20 border-rose-500/20 text-rose-200'
+                    ? 'bg-blue-950/20 border-blue-500/20 text-blue-200'
+                    : 'bg-blue-900/30 border-blue-400/30 text-blue-100'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={`w-8 h-8 rounded-full ${user.avatarColor || 'bg-blue-600'} text-white font-bold text-xs flex items-center justify-center shrink-0 border border-white/10`}>
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-white/10">
                     {user.name[0]}
                   </div>
                   <div className="min-w-0">
@@ -239,11 +239,11 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                 
                 <div className="text-right ml-2 shrink-0">
                   {isCleared ? (
-                    <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold px-2 py-1 rounded-full border border-emerald-500/10">
+                    <span className="bg-blue-500/20 text-blue-300 text-[10px] font-extrabold px-2 py-1 rounded-full border border-blue-500/10">
                       All Clear 🎉
                     </span>
                   ) : (
-                    <span className="text-sm font-black text-rose-400">
+                    <span className="text-sm font-black text-blue-200">
                       ${overdue.toFixed(2)}
                     </span>
                   )}
@@ -333,7 +333,7 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                       className="w-full flex items-center justify-between text-left"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className={`w-2.5 h-2.5 rounded-full ${user.avatarColor || 'bg-blue-600'} shrink-0`}></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0"></div>
                         <span className="text-sm text-gray-700 font-medium truncate">
                           {user.name} {user.id === currentUser.id ? '(You)' : ''}
                         </span>
@@ -435,7 +435,7 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                         </div>
                         <button
                           onClick={() => handleDelete(exp.id)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-1"
+                          className="p-2 text-gray-400 hover:text-[#0077ed] hover:bg-[#eaf4ff] rounded-lg transition-colors ml-1"
                           title="Delete record"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -459,17 +459,17 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                               key={u.id}
                               className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-xl border font-semibold shadow-sm ${
                                 isPaid
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-rose-50 text-rose-700 border-rose-200'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : 'bg-blue-100 text-blue-800 border-blue-300'
                               }`}
                               title={`${u.name}'s payment status`}
                             >
-                              <div className={`w-2.5 h-2.5 rounded-full ${u.avatarColor || 'bg-blue-600'} shrink-0`} />
+                              <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" />
                               <span>{u.name} {isCurrentUser ? '(You)' : ''}</span>
                               {isPaid ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                               ) : (
-                                <div className="w-3.5 h-3.5 rounded-full border border-rose-400/50 shrink-0" />
+                                <div className="w-3.5 h-3.5 rounded-full border border-blue-500/50 shrink-0" />
                               )}
                             </div>
                           );

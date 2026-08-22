@@ -55,7 +55,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
           td { padding: 12px 15px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
           tr:nth-child(even) { background: #fafafa; }
           .status-fridge { color: #2563eb; font-weight: 500; }
-          .status-used { color: #16a34a; font-weight: 500; }
+          .status-used { color: #1d4ed8; font-weight: 500; }
           .price { font-weight: 600; }
           .shared-by { font-size: 12px; color: #6b7280; }
           .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 12px; }
@@ -226,7 +226,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                   {item.status === ItemStatus.FRIDGE ? (
                     <button 
                       onClick={() => openUseModal(item)}
-                      className="w-11 h-11 rounded-xl bg-[#e7f8ee] text-[#30b06a] hover:bg-[#d7f2e2] flex items-center justify-center"
+                      className="w-11 h-11 rounded-xl bg-[#eaf4ff] text-[#0a84ff] hover:bg-[#dceeff] flex items-center justify-center"
                       title="Mark as Used"
                     >
                       <Check className="w-5 h-5" />
@@ -253,7 +253,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                   <button 
                     onClick={() => onDelete(item.id)}
                     aria-label={`Delete ${item.name}`}
-                    className="w-11 h-11 rounded-xl bg-[#fff0ef] text-[#ff3b30] hover:bg-[#ffe4e2] flex items-center justify-center"
+                    className="w-11 h-11 rounded-xl bg-[#eaf4ff] text-[#1d4ed8] hover:bg-[#dceeff] flex items-center justify-center"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -274,7 +274,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                         <div 
                           key={uid} 
                           title={user.name}
-                          className={`w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-[9px] text-white font-bold ${user.avatarColor}`}
+                          className="w-5 h-5 rounded-full border-2 border-white bg-blue-600 flex items-center justify-center text-[9px] text-white font-bold"
                         >
                           {user.name[0]}
                         </div>
@@ -375,7 +375,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                     onClick={() => setUseSelectedUsers(prev => prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id])}
                     className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
                       useSelectedUsers.includes(user.id)
-                        ? `${user.avatarColor} text-white shadow-sm`
+                        ? 'bg-[#0a84ff] text-white shadow-sm'
                         : 'bg-gray-100 text-gray-600'
                     }`}
                   >
@@ -387,7 +387,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                 Per person: <span className="font-bold text-gray-700">${useSelectedUsers.length ? ((useModalItem.unitPrice * useQuantity) / useSelectedUsers.length).toFixed(2) : '0.00'}</span>
               </div>
               {useSelectedUsers.length === 0 && (
-                <div className="mt-2 text-xs text-red-500">Select at least one person.</div>
+                <div className="mt-2 text-xs text-[#1d4ed8]">Select at least one person.</div>
               )}
             </div>
             
@@ -397,7 +397,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
               className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors ${
                 useSelectedUsers.length === 0
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-600 text-white active:bg-green-700'
+                  : 'bg-[#0a84ff] text-white active:bg-[#0077ed]'
               }`}
             >
               <Check className="w-5 h-5" />

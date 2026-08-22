@@ -143,7 +143,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
             </button>
             <button 
               onClick={() => setMode('ai')}
-               className={`flex-1 min-h-11 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-1.5 ${mode === 'ai' ? 'bg-white text-[#af52de] shadow-sm' : 'text-gray-500'}`}
+              className={`flex-1 min-h-11 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-1.5 ${mode === 'ai' ? 'bg-white text-[#0a84ff] shadow-sm' : 'text-gray-500'}`}
             >
               <Sparkles className="w-4 h-4" />
               AI Paste
@@ -215,7 +215,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
                         onClick={() => toggleUser(user.id)}
                         className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
                           selectedUsers.includes(user.id)
-                          ? `${user.avatarColor} text-white shadow-sm`
+                          ? 'bg-[#0a84ff] text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600'
                         }`}
                       >
@@ -238,24 +238,24 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
             </form>
           ) : (
             <div className="space-y-4">
-              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                <h3 className="text-sm font-semibold text-purple-900 mb-1 flex items-center gap-2">
+              <div className="bg-[#eaf4ff] p-4 rounded-xl border border-blue-100">
+                <h3 className="text-sm font-semibold text-blue-900 mb-1 flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />
                   How this works
                 </h3>
-                <p className="text-xs text-purple-700">
+                <p className="text-xs text-blue-700">
                   Paste your receipt text. Gemini will detect items, prices, and suggest splits.
                 </p>
               </div>
               <textarea
                 value={aiInput}
                 onChange={e => setAiInput(e.target.value)}
-                className="w-full h-36 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 text-base resize-none"
+                className="w-full h-36 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-base resize-none"
                 placeholder="Type or paste receipt details here..."
               ></textarea>
               <Button 
                 onClick={handleAiSubmit} 
-                className="w-full justify-center py-3 bg-purple-600 hover:bg-purple-700 border-purple-600"
+                className="w-full justify-center py-3 bg-[#0a84ff] hover:bg-[#0077ed] border-[#0a84ff]"
                 isLoading={loading}
               >
                 <Sparkles className="w-4 h-4" />

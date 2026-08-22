@@ -10,27 +10,18 @@ interface Props {
   onDeleteUser: (id: string) => void;
 }
 
-const AVATAR_COLORS = [
-  'bg-blue-600', 'bg-purple-600', 'bg-green-600', 'bg-yellow-500', 
-  'bg-red-600', 'bg-pink-600', 'bg-indigo-600', 'bg-gray-600',
-  'bg-teal-600', 'bg-orange-500'
-];
-
 export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, onDeleteUser }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [color, setColor] = useState(AVATAR_COLORS[0]);
 
   const handleEditClick = (user: User) => {
     setEditingId(user.id);
     setName(user.name);
-    setColor(user.avatarColor);
   };
 
   const handleNewClick = () => {
     setEditingId('NEW');
     setName('');
-    setColor(AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -40,7 +31,7 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
     const userToSave: User = {
       id: editingId === 'NEW' ? Date.now().toString() : editingId!,
       name,
-      avatarColor: color
+      avatarColor: 'bg-blue-600'
     };
 
     onSaveUser(userToSave);
@@ -69,7 +60,7 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
             {users.map(user => (
               <div key={user.id} className="flex items-center justify-between p-3 bg-white border border-black/[0.06] rounded-2xl hover:bg-[#f2f2f7] transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full ${user.avatarColor} text-white flex items-center justify-center text-xs font-bold`}>
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
                     {user.name[0]?.toUpperCase()}
                   </div>
                   <span className="font-medium text-gray-700">{user.name}</span>
@@ -87,7 +78,7 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
                         if(window.confirm(`Delete ${user.name}?`)) onDeleteUser(user.id);
                       }}
                       aria-label={`Delete ${user.name}`}
-                      className="w-10 h-10 text-[#ff3b30] hover:text-[#e8342b] flex items-center justify-center rounded-xl hover:bg-[#fff0ef]"
+                      className="w-10 h-10 text-[#1d4ed8] hover:text-[#1e40af] flex items-center justify-center rounded-xl hover:bg-[#eaf4ff]"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -115,20 +106,6 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
                   placeholder="Enter name"
                   required
                 />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-xs font-semibold text-gray-500 mb-2">Avatar Color</label>
-                <div className="flex flex-wrap gap-2">
-                  {AVATAR_COLORS.map(c => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setColor(c)}
-                      className={`w-6 h-6 rounded-full transition-transform ${c} ${color === c ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : 'hover:scale-110'}`}
-                    />
-                  ))}
-                </div>
               </div>
 
               <div className="flex gap-2 justify-end">
