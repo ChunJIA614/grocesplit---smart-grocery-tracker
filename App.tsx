@@ -131,9 +131,6 @@ const App: React.FC = () => {
 
         setBillAlerts(prev => [alert, ...prev].slice(0, 4));
 
-        if (notificationPermission === 'granted') {
-          void showBrowserNotification(alert);
-        }
       });
     });
 
@@ -153,10 +150,6 @@ const App: React.FC = () => {
           if (!registered) throw new Error('FCM token was not registered');
           setNotificationStatus('ready');
           stopForegroundListener = PushNotificationService.listenForForegroundMessages((payload) => {
-            // Grocery bills already create the in-app alert from the payment history
-            // listener. FCM handles rental and release alerts while this tab is open.
-            if (payload.data?.kind === 'grocery-bill') return;
-
             const title = payload.data?.title || payload.notification?.title || 'DormMate update';
             const body = payload.data?.body || payload.notification?.body || 'There is an update in your dorm.';
             void showBrowserNotification({ title, body });
