@@ -12,20 +12,14 @@ export const Button: React.FC<ButtonProps> = ({
   className = '', 
   ...props 
 }) => {
-  // Bootstrap-like base styles: reduced roundness, specific padding
-  const baseStyle = "px-4 py-2 rounded font-medium transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-65 disabled:cursor-not-allowed";
+  const baseStyle = "min-h-11 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 border transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
   
   const variants = {
-    // Bootstrap Primary Blue #0d6efd
-    primary: "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 border border-blue-600",
-    // Bootstrap Secondary Gray
-    secondary: "bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500 border border-gray-600",
-    // Bootstrap Danger Red #dc3545
-    danger: "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 border border-red-600",
-    // Bootstrap Success Green #198754
-    success: "bg-green-700 hover:bg-green-800 text-white focus:ring-green-500 border border-green-700",
-    // Ghost/Link
-    ghost: "bg-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-transparent"
+    primary: "bg-[#0a84ff] hover:bg-[#0077ed] text-white border-[#0a84ff] shadow-sm shadow-blue-500/20",
+    secondary: "bg-white hover:bg-gray-50 text-gray-800 border-gray-200 shadow-sm",
+    danger: "bg-[#ff3b30] hover:bg-[#e8342b] text-white border-[#ff3b30] shadow-sm shadow-red-500/20",
+    success: "bg-[#30b06a] hover:bg-[#28995b] text-white border-[#30b06a] shadow-sm shadow-emerald-500/20",
+    ghost: "bg-transparent text-gray-600 hover:text-gray-900 hover:bg-black/[0.04] border-transparent"
   };
 
   return (

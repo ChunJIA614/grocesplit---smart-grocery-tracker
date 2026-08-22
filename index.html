@@ -9,8 +9,8 @@
     <meta name="apple-mobile-web-app-title" content="DormMate" />
     <meta name="application-name" content="DormMate" />
     <meta name="description" content="Manage shared life in your dorm or apartment: Track fridge inventory, aircond usage, and split bills easily." />
-    <meta name="theme-color" content="#2563eb" />
-    <meta name="msapplication-TileColor" content="#2563eb" />
+    <meta name="theme-color" content="#f6f7fb" />
+    <meta name="msapplication-TileColor" content="#f6f7fb" />
     <meta name="msapplication-tap-highlight" content="no" />
     <meta name="format-detection" content="telephone=no" />
     
@@ -24,15 +24,22 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-      body { 
-        font-family: 'Inter', sans-serif; 
-        background-color: #f3f4f6;
+      :root {
+        color-scheme: light;
+        font: 100%/1.5 system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+
+      body {
+        margin: 0;
+        font-family: inherit;
+        color: #1d1d1f;
+        background: #f6f7fb;
         overscroll-behavior-y: contain;
         -webkit-tap-highlight-color: transparent;
       }
@@ -45,7 +52,7 @@
         padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
       }
       
-      /* Modal slide-up animation */
+      /* Motion stays short, interruptible, and non-essential. */
       @keyframes slide-up {
         from {
           transform: translateY(100%);
@@ -57,13 +64,29 @@
         }
       }
       .animate-slide-up {
-        animation: slide-up 0.3s ease-out;
+        animation: slide-up 260ms cubic-bezier(.22,1,.36,1);
       }
       
-      /* Smooth touch interactions */
+      button, input, textarea, select {
+        font: inherit;
+      }
+
       button, a {
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
+      }
+
+      button {
+        transition: transform 120ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+      }
+
+      button:active:not(:disabled) {
+        transform: scale(.97);
+      }
+
+      button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+        outline: 3px solid rgba(10, 132, 255, .28);
+        outline-offset: 2px;
       }
       
       /* Custom scrollbar for lists */
@@ -74,8 +97,8 @@
         background: transparent;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #d1d5db;
-        border-radius: 2px;
+        background: #c7c9d1;
+        border-radius: 999px;
       }
       
       /* PWA splash screen styling */
@@ -90,6 +113,24 @@
         z-index: 9999;
       }
       .pwa-splash.hidden { display: none; }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: .01ms !important;
+          animation-iteration-count: 1 !important;
+          scroll-behavior: auto !important;
+          transition-duration: .01ms !important;
+        }
+        button:active:not(:disabled) { transform: none; }
+      }
+
+      @media (prefers-reduced-transparency: reduce) {
+        .material-surface { background: rgba(255, 255, 255, .98) !important; backdrop-filter: none !important; }
+      }
+
+      @media (prefers-contrast: more) {
+        .material-surface { border-color: #6b7280 !important; }
+      }
     </style>
   </head>
   <body>

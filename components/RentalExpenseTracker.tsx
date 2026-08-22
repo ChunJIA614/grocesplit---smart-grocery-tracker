@@ -168,15 +168,15 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
   return (
     <div className="space-y-6">
       {/* Header and Filter */}
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <div className="bg-white p-5 rounded-[24px] shadow-sm border border-black/[0.06]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-gray-800">Dorm Rent & Shared Bills</h3>
-              <p className="text-xs text-gray-500">Track monthly rent, wifi, utilities, and split them. Outstanding balances are listed below.</p>
+              <h3 className="text-base font-bold text-gray-900">Dorm Rent & Shared Bills</h3>
+              <p className="text-xs text-[#6e6e73]">Track shared household costs and settle your balance in one step.</p>
             </div>
           </div>
           
@@ -187,13 +187,13 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                 Pay All (${(overdueBalances[currentUser.id] || 0).toFixed(2)})
               </Button>
             )}
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+            <span className="text-xs font-semibold text-gray-400 uppercase flex items-center gap-1">
               <ListFilter className="w-3.5 h-3.5" /> Filter Month:
             </span>
             <select
               value={filterMonth}
               onChange={(e) => setFilterMonth(e.target.value)}
-              className="bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+              className="bg-[#f2f2f7] border border-black/[0.06] text-gray-700 text-xs rounded-xl px-3 py-2 font-semibold"
             >
               <option value="all">All Months</option>
               {uniqueMonths.map(month => {
@@ -207,8 +207,8 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
       </div>
 
       {/* OVERDUE AMOUNT LIST ON TOP */}
-      <div className="bg-gradient-to-br from-gray-900 to-slate-800 text-white p-5 rounded-2xl shadow-md border border-gray-800">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2 mb-4">
+      <div className="bg-[#1d1d1f] text-white p-5 rounded-[24px] shadow-xl shadow-black/10 border border-black">
+        <h3 className="text-xs font-bold uppercase text-white/60 flex items-center gap-2 mb-4">
           <AlertCircle className="w-4 h-4 text-rose-400" />
           Roommate Overdue Balances (Dorm & Bills Only)
         </h3>
@@ -257,9 +257,9 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
       {/* Grid Layout: Add Expense (Left) & History logs (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Entry Form */}
-        <div className="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 h-fit">
-          <h3 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Plus className="w-5 h-5 text-blue-600" />
+        <div className="lg:col-span-1 bg-white p-5 rounded-[24px] shadow-sm border border-black/[0.06] h-fit">
+          <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Plus className="w-5 h-5 text-[#0a84ff]" />
             Add Bill or Rental
           </h3>
 
@@ -372,9 +372,9 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
         </div>
 
         {/* History List */}
-        <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-h-[400px]">
+        <div className="lg:col-span-2 bg-white p-5 rounded-[24px] shadow-sm border border-black/[0.06] flex flex-col min-h-[400px]">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-gray-600" />
               Shared Bill History logs
             </h3>
@@ -426,10 +426,10 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
 
                       <div className="flex items-center gap-2 shrink-0">
                         <div className="text-right">
-                          <span className="text-base sm:text-lg font-black text-blue-600 block">
+                          <span className="text-base sm:text-lg font-black text-[#0a84ff] block">
                             ${exp.amount.toFixed(2)}
                           </span>
-                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase">
                             ${shareCost.toFixed(2)} each
                           </span>
                         </div>
@@ -445,7 +445,7 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
 
                     {/* Roommate payment status */}
                     <div className="mt-4 pt-3.5 border-t border-gray-150">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">
                         Roommates Paid Status
                       </p>
                       

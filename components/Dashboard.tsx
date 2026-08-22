@@ -65,16 +65,16 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
   const myPaymentHistory = paymentHistory.filter(entry => entry.actorId === currentUser.id && entry.type === 'PAYMENT_MADE');
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       
       {/* Current User Summary */}
-      <div className="sticky top-[60px] md:top-0 z-20 bg-gradient-to-br from-blue-600 via-blue-600 to-blue-700 rounded-2xl p-5 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+      <div className="sticky top-[60px] md:top-0 z-20 bg-[#1d1d1f] rounded-[24px] p-6 text-white shadow-xl shadow-black/10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-[#0a84ff]/20 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/3"></div>
         <div className="relative z-10">
-          <p className="text-blue-100 text-xs font-medium mb-1 uppercase tracking-wider">My Outstanding Share</p>
-          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight">${stats.currentUserDebt.toFixed(2)}</h2>
-          <p className="text-blue-200 text-xs mt-2">{stats.currentUserUnpaidItems.length} unpaid items</p>
+          <p className="text-white/60 text-xs font-semibold mb-2 uppercase">Your balance</p>
+          <h2 className="text-4xl sm:text-5xl font-bold">${stats.currentUserDebt.toFixed(2)}</h2>
+          <p className="text-white/60 text-sm mt-2">{stats.currentUserUnpaidItems.length === 0 ? 'You are all caught up' : `${stats.currentUserUnpaidItems.length} grocery items to settle`}</p>
         </div>
       </div>
 
@@ -83,7 +83,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
         <button
           onClick={handleClearMyOutstanding}
           disabled={isClearing}
-          className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-md shadow-green-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full min-h-12 px-4 bg-[#30b06a] hover:bg-[#28995b] text-white font-semibold rounded-[18px] shadow-sm shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Banknote className="w-5 h-5" />
           {isClearing ? 'Clearing...' : `Clear My Outstanding ($${stats.currentUserDebt.toFixed(2)})`}
@@ -93,22 +93,22 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
         {/* Unpaid Items List (Tick Paid) */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
-           <h3 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-             <div className="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center">
+        <div className="bg-white p-4 sm:p-6 rounded-[24px] shadow-sm border border-black/[0.06]">
+             <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+               <div className="w-8 h-8 rounded-xl bg-[#e7f8ee] flex items-center justify-center">
                <CheckCircle2 className="w-4 h-4 text-green-600" />
              </div>
              Tick to Pay
            </h3>
            <div className="space-y-2 max-h-80 overflow-y-auto">
              {stats.currentUserUnpaidItems.length === 0 ? (
-               <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                 <div className="text-center py-10 text-[#6e6e73] bg-[#f2f2f7] rounded-2xl border border-dashed border-black/[0.1]">
                  <span className="text-3xl mb-2 block">🎉</span>
                  <p className="font-medium">You're all settled up!</p>
                </div>
              ) : (
                stats.currentUserUnpaidItems.map(({ item, amount }) => (
-                 <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl active:bg-gray-100 transition-colors">
+                 <div key={item.id} className="flex items-center justify-between p-3 bg-[#f2f2f7] rounded-2xl hover:bg-[#e5e5ea] transition-colors">
                     <div className="min-w-0 flex-1 mr-3">
                       <p className="font-semibold text-gray-800 truncate text-sm">{item.name}</p>
                       <p className="text-[10px] text-gray-400">{new Date(item.dateAdded).toLocaleDateString()}</p>
@@ -117,7 +117,8 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
                       <span className="font-bold text-gray-700 text-sm">${amount.toFixed(2)}</span>
                       <button 
                         onClick={() => handleMarkPaid(item)}
-                        className="w-10 h-10 rounded-xl border-2 border-green-500 text-green-500 hover:bg-green-500 hover:text-white active:scale-95 flex items-center justify-center transition-all"
+                         aria-label={`Mark ${item.name} as paid`}
+                         className="w-11 h-11 rounded-xl border-2 border-[#30b06a] text-[#30b06a] hover:bg-[#30b06a] hover:text-white flex items-center justify-center"
                         title="Mark as Paid"
                       >
                         <Check className="w-5 h-5" />
@@ -130,9 +131,9 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
         </div>
 
         {/* Debt Overview Chart */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+        <div className="bg-white p-4 sm:p-6 rounded-[24px] shadow-sm border border-black/[0.06] flex flex-col">
           <div className="mb-4">
-              <h3 className="text-base font-bold text-gray-800">Household Debt</h3>
+             <h3 className="text-base font-bold text-gray-900">Household Debt</h3>
               <p className="text-xs text-gray-400">
                   Who owes what for consumed items.
               </p>
@@ -163,13 +164,13 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
                     </BarChart>
                 </ResponsiveContainer>
             ) : (
-                <div className="h-full flex items-center justify-center text-gray-400 bg-gray-50 rounded border border-dashed">
+                <div className="h-full flex items-center justify-center text-[#6e6e73] bg-[#f2f2f7] rounded-2xl border border-dashed border-black/[0.1]">
                     <p>No outstanding debt.</p>
                 </div>
             )}
           </div>
           
-           <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t">
+           <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-black/[0.06]">
              {stats.chartData.map((d, i) => (
                <div key={d.name} className="flex items-center gap-1.5 text-xs text-gray-600">
                  <div className={`w-2 h-2 rounded-full ${d.color}`}></div>
@@ -180,11 +181,11 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
         </div>
       </div>
 
-      <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div className="bg-white p-4 sm:p-6 rounded-[24px] shadow-sm border border-black/[0.06]">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
-            <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
-              <ReceiptText className="w-4 h-4 text-blue-600" />
+            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <ReceiptText className="w-4 h-4 text-[#0a84ff]" />
               Payment History
             </h3>
             <p className="text-xs text-gray-400">Look back at the split bills and payments made in the household.</p>
@@ -208,7 +209,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
               const isCurrentUser = entry.actorId === currentUser.id;
 
               return (
-                <div key={entry.id} className="flex items-start justify-between gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                  <div key={entry.id} className="flex items-start justify-between gap-3 p-3 rounded-2xl bg-[#f2f2f7] border border-transparent hover:border-black/[0.06] transition-colors">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isBill ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
@@ -219,7 +220,7 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
                     <p className="text-xs text-gray-500 leading-relaxed">{entry.message}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-400">
                       <span>{isBill ? `Latest bill $${entry.latestBillAmount.toFixed(2)}` : `Paid $${entry.amount.toFixed(2)}`}</span>
-                      <span>Total overdue $${entry.totalOutstanding.toFixed(2)}</span>
+                      <span>Total overdue ${entry.totalOutstanding.toFixed(2)}</span>
                       <span>{new Date(entry.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
