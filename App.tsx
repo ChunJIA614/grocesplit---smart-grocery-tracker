@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LayoutGrid, List as ListIcon, Plus, User as UserIcon, CloudOff, Cloud, LogOut, Wifi, WifiOff, RefreshCw, Wind, CreditCard, X, Sun, Moon } from 'lucide-react';
+import { LayoutGrid, List as ListIcon, Plus, CloudOff, Cloud, LogOut, Wifi, WifiOff, RefreshCw, Wind, CreditCard, X, Sun, Moon } from 'lucide-react';
 import { GroceryService } from './services/groceryService';
 import { PushNotificationService } from './services/pushNotificationService';
 import { suggestRecipe } from './services/geminiService';
@@ -42,6 +42,7 @@ const App: React.FC = () => {
   // Modals
   const [isModalOpen, setModalOpen] = useState(false);
   const [isUserModalOpen, setUserModalOpen] = useState(false);
+  const [isProfileMenuOpen, setProfileMenuOpen] = useState(false);
   
   const [editingItem, setEditingItem] = useState<GroceryItem | undefined>(undefined);
   const [recipeText, setRecipeText] = useState<string>('');
@@ -54,17 +55,18 @@ const App: React.FC = () => {
   const toggleTheme = () => setTheme(current => current === 'light' ? 'dark' : 'light');
 
   useEffect(() => {
-    if (!isModalOpen && !isUserModalOpen) return;
+    if (!isModalOpen && !isUserModalOpen && !isProfileMenuOpen) return;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setModalOpen(false);
         setUserModalOpen(false);
+        setProfileMenuOpen(false);
         setEditingItem(undefined);
       }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [isModalOpen, isUserModalOpen]);
+  }, [isModalOpen, isUserModalOpen, isProfileMenuOpen]);
 
   // Online/Offline detection
   useEffect(() => {
@@ -189,8 +191,6 @@ const App: React.FC = () => {
   // Subscriptions
   useEffect(() => {
     // Try to recover user session from localstorage (simple persistence)
-    const savedUserId = localStorage.getItem('dormmate_current_user_id');
-
     // Set a timeout to stop loading even if Firebase doesn't respond
     const loadingTimeout = setTimeout(() => {
       setLoading(false);
@@ -209,7 +209,8 @@ const App: React.FC = () => {
       setLoading(false);
       
       // Restore user if exists in new list
-      if (savedUserId && !currentUser) {
+      const savedUserId = localStorage.getItem('dormmate_current_user_id');
+      if (savedUserId) {
         const found = newUsers.find(u => u.id === savedUserId);
         if (found) setCurrentUser(found);
       }
@@ -229,6 +230,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setProfileMenuOpen(false);
     localStorage.removeItem('dormmate_current_user_id');
   };
 
@@ -426,7 +428,7 @@ const App: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
           <button
             onClick={toggleTheme}
             aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
@@ -436,12 +438,22 @@ const App: React.FC = () => {
           >
             {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
           </button>
-          <button 
+          <button
             className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center shadow-sm border-2 border-white"
-            onClick={() => setUserModalOpen(true)}
+            onClick={() => setProfileMenuOpen(open => !open)}
+            aria-label="Open profile menu"
+            aria-expanded={isProfileMenuOpen}
           >
-              {currentUser.name[0]}
+            {currentUser.name[0]}
           </button>
+          {isProfileMenuOpen && (
+            <div className="absolute right-0 top-12 w-44 rounded-2xl bg-white border border-black/[0.06] shadow-xl p-2 z-60">
+              <p className="px-3 py-2 text-xs font-semibold text-gray-500 truncate">{currentUser.name}</p>
+              <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-sm font-semibold text-[#0077ed] hover:bg-[#eaf4ff]">
+                <LogOut className="w-4 h-4" /> Exit
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -513,25 +525,6 @@ const App: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-black/[0.06] bg-[#f2f2f7] space-y-1">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
-               {currentUser.name[0]}
-            </div>
-            <div className="text-sm overflow-hidden">
-              <p className="font-bold text-gray-800 truncate">{currentUser.name}</p>
-              <button onClick={handleLogout} className="text-xs text-[#0077ed] hover:underline flex items-center gap-1">
-                 <LogOut className="w-3 h-3" /> Sign Out
-              </button>
-            </div>
-          </div>
-          
-          <button 
-            onClick={() => setUserModalOpen(true)}
-            className="w-full flex items-center gap-3 px-2 py-2 rounded hover:bg-gray-100 transition-colors text-left text-xs text-gray-500"
-          >
-            <UserIcon className="w-4 h-4" />
-            Manage Members
-          </button>
           <button
             onClick={toggleTheme}
             aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
@@ -585,12 +578,30 @@ const App: React.FC = () => {
                      : 'Manage and split dorm rental and monthly utility fees.'}
             </p>
           </div>
-          {activeTab !== 'aircond' && activeTab !== 'rental' && (
-            <Button onClick={() => setModalOpen(true)} className="shadow-sm hidden md:flex">
-              <Plus className="w-5 h-5" />
-              <span>Add Item</span>
-            </Button>
-          )}
+          <div className="flex items-center gap-2 relative">
+            {activeTab !== 'aircond' && activeTab !== 'rental' && (
+              <Button onClick={() => setModalOpen(true)} className="shadow-sm hidden md:flex">
+                <Plus className="w-5 h-5" />
+                <span>Add Item</span>
+              </Button>
+            )}
+            <button
+              onClick={() => setProfileMenuOpen(open => !open)}
+              aria-label="Open profile menu"
+              aria-expanded={isProfileMenuOpen}
+              className="hidden md:flex w-11 h-11 rounded-full bg-blue-600 text-white font-bold items-center justify-center shadow-sm border-2 border-white"
+            >
+              {currentUser.name[0]}
+            </button>
+            {isProfileMenuOpen && (
+              <div className="hidden md:block absolute right-0 top-12 w-44 rounded-2xl bg-white border border-black/[0.06] shadow-xl p-2 z-60">
+                <p className="px-3 py-2 text-xs font-semibold text-gray-500 truncate">{currentUser.name}</p>
+                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-sm font-semibold text-[#0077ed] hover:bg-[#eaf4ff]">
+                  <LogOut className="w-4 h-4" /> Exit
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {notificationPermission !== 'granted' && 'Notification' in window && (
@@ -683,15 +694,6 @@ const App: React.FC = () => {
             <span className="text-[9px] mt-0.5 font-bold">Bills</span>
           </button>
           
-          <button 
-            onClick={handleLogout}
-            className="flex-1 flex flex-col items-center py-3 text-[#8e8e93] active:text-[#0077ed]"
-          >
-            <div className="p-1.5">
-              <LogOut className="w-5 h-5" />
-            </div>
-            <span className="text-[9px] mt-0.5 font-bold">Exit</span>
-          </button>
         </div>
       </div>
 
