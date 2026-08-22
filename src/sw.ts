@@ -29,6 +29,9 @@ if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.messagin
   messagingInitialized = true;
 
   onBackgroundMessage(messaging, (payload) => {
+    // Firebase displays notification payloads automatically when no app client is visible.
+    if (payload.notification) return;
+
     const title = payload.notification?.title || payload.data?.title || 'New split payment';
     const body = payload.notification?.body || payload.data?.body || 'A new bill was added.';
     const url = payload.data?.url || '/';

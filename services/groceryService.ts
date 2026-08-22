@@ -20,10 +20,16 @@ const PAYMENT_HISTORY_STORAGE_KEY = 'dormmate_payment_history';
 
 type Listener<T> = (data: T) => void;
 
+const normalizeUserIds = (ids: unknown): string[] => (
+  Array.isArray(ids)
+    ? [...new Set(ids.filter((id): id is string => typeof id === 'string' && id.length > 0))]
+    : []
+);
+
 const normalizeItem = (item: GroceryItem): GroceryItem => ({
   ...item,
-  paidBy: item.paidBy || [],
-  sharedBy: item.sharedBy || [],
+  paidBy: normalizeUserIds(item.paidBy),
+  sharedBy: normalizeUserIds(item.sharedBy),
 });
 
 const loadLocalItems = (): GroceryItem[] => {
@@ -49,6 +55,7 @@ const normalizeHistoryEntry = (entry: PaymentHistoryEntry): PaymentHistoryEntry 
   shareCount: Number(entry.shareCount) || 0,
   totalOutstanding: Number(entry.totalOutstanding) || 0,
   latestBillAmount: Number(entry.latestBillAmount) || 0,
+  recipientIds: normalizeUserIds(entry.recipientIds),
 });
 
 const saveLocalHistory = (entries: PaymentHistoryEntry[]) => {
@@ -135,7 +142,7 @@ const createBillHistoryEntry = (item: GroceryItem, items: GroceryItem[]): Paymen
     latestBillAmount: item.totalPrice,
     createdAt: item.dateAdded,
     message: `${actorName} created a split bill for ${item.name}. Latest bill: $${item.totalPrice.toFixed(2)}. Total overdue: $${totalOutstanding.toFixed(2)}.`,
-    recipientIds: item.sharedBy,
+    recipientIds: normalizeUserIds(item.sharedBy),
   };
 };
 

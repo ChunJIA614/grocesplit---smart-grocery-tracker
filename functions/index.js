@@ -20,6 +20,24 @@ const getPushTokens = async (recipientIds) => {
     .filter(Boolean);
 };
 
+const getGroceryRecipientIds = async (entry) => {
+  const directRecipients = Array.isArray(entry.recipientIds)
+    ? entry.recipientIds.filter((id) => typeof id === 'string' && id.length > 0)
+    : [];
+
+  if (directRecipients.length > 0) {
+    return [...new Set(directRecipients)];
+  }
+
+  const itemId = typeof entry.itemId === 'string' ? entry.itemId : '';
+  if (!itemId) return [];
+
+  const itemSnapshot = await firestore.collection('items').doc(itemId).get();
+  const item = itemSnapshot.exists ? itemSnapshot.data() : null;
+  const sharedBy = item && Array.isArray(item.sharedBy) ? item.sharedBy : [];
+  return [...new Set(sharedBy.filter((id) => typeof id === 'string' && id.length > 0))];
+};
+
 const sendPush = async ({ title, body, url = '/', data = {}, recipientIds }) => {
   if (recipientIds && recipientIds.length === 0) {
     console.log('No notification recipients assigned.');
@@ -39,7 +57,10 @@ const sendPush = async ({ title, body, url = '/', data = {}, recipientIds }) => 
     const chunk = tokens.slice(index, index + 500);
     const response = await messaging.sendEachForMulticast({
       tokens: chunk,
-      // Data-only payloads are handled by src/sw.ts for one notification path.
+      notification: {
+        title,
+        body,
+      },
       data: {
         title,
         body,
@@ -70,6 +91,8 @@ exports.sendSplitPaymentPush = onDocumentCreated('paymentHistory/{entryId}', asy
     return;
   }
 
+  const recipientIds = await getGroceryRecipientIds(entry);
+
   await sendPush({
     title: `New grocery bill: ${entry.itemName || 'Shared grocery'}`,
     body: `Latest bill $${Number(entry.latestBillAmount || entry.amount || 0).toFixed(2)} | Total overdue $${Number(entry.totalOutstanding || 0).toFixed(2)}`,
@@ -78,8 +101,7 @@ exports.sendSplitPaymentPush = onDocumentCreated('paymentHistory/{entryId}', asy
       entryId: entry.id || event.params.entryId,
       itemId: entry.itemId || '',
     },
-    // Missing recipient data must not fall back to a household-wide payment alert.
-    recipientIds: Array.isArray(entry.recipientIds) ? entry.recipientIds : [],
+    recipientIds,
   });
 });
 
