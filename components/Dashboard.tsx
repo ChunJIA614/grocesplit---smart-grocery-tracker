@@ -69,13 +69,13 @@ export const Dashboard: React.FC<Props> = ({ items, users, currentUser, paymentH
     <div className="space-y-5">
       
       {/* Current User Summary */}
-      <div className="sticky top-[60px] md:top-0 z-20 bg-[#1d1d1f] rounded-[24px] p-6 text-white shadow-xl shadow-black/10 relative overflow-hidden">
+      <div className="balance-panel sticky top-[60px] md:top-0 z-20 bg-[#eaf4ff] rounded-[24px] p-6 text-[#1d4ed8] shadow-xl shadow-blue-900/10 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-40 h-40 bg-[#0a84ff]/20 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/3"></div>
         <div className="relative z-10">
-          <p className="text-white/60 text-xs font-semibold mb-2 uppercase">Your balance</p>
+          <p className="text-blue-700/70 text-xs font-semibold mb-2 uppercase">Your balance</p>
           <h2 className="text-4xl sm:text-5xl font-bold">${stats.currentUserDebt.toFixed(2)}</h2>
-          <p className="text-white/60 text-sm mt-2">{stats.currentUserUnpaidItems.length === 0 ? 'You are all caught up' : `${stats.currentUserUnpaidItems.length} grocery items to settle`}</p>
+          <p className="text-blue-700/70 text-sm mt-2">{stats.currentUserUnpaidItems.length === 0 ? 'You are all caught up' : `${stats.currentUserUnpaidItems.length} grocery items to settle`}</p>
         </div>
       </div>
 

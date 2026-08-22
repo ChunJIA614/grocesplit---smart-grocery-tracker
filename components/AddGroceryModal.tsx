@@ -120,7 +120,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
       <div className="bg-white rounded-t-[28px] sm:rounded-[28px] w-full sm:max-w-md shadow-2xl shadow-black/20 overflow-hidden border border-black/[0.06] max-h-[90vh] flex flex-col animate-slide-up">
         
         {/* Header - Bootstrap style */}
-        <div className="bg-[#1d1d1f] p-5 flex justify-between items-center shrink-0">
+        <div className="bg-[#0a84ff] p-5 flex justify-between items-center shrink-0">
           <h2 id="grocery-modal-title" className="text-lg font-bold text-white flex items-center gap-2">
             <div className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center">
               <ShoppingBag className="w-4 h-4 text-white" />

@@ -1,19 +1,30 @@
 import React from 'react';
 import { User } from '../types';
-import { ChevronRight, UserRoundPlus } from 'lucide-react';
+import { ChevronRight, UserRoundPlus, Sun, Moon } from 'lucide-react';
 
 interface Props {
   users: User[];
   onSelectUser: (user: User) => void;
   onManageUsers: () => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
-export const LoginScreen: React.FC<Props> = ({ users, onSelectUser, onManageUsers }) => {
+export const LoginScreen: React.FC<Props> = ({ users, onSelectUser, onManageUsers, theme, onToggleTheme }) => {
   return (
-    <div className="fixed inset-0 bg-[#f6f7fb] flex flex-col items-center justify-center p-6 safe-area-top text-[#1d1d1f]">
+    <div className="theme-login fixed inset-0 bg-[#f6f7fb] flex flex-col items-center justify-center p-6 safe-area-top text-[#1d1d1f]">
+       <button
+         onClick={onToggleTheme}
+         aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+         aria-pressed={theme === 'dark'}
+         title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+         className="absolute top-5 right-5 w-11 h-11 rounded-full bg-[#eaf4ff] text-[#0077ed] flex items-center justify-center"
+       >
+         {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+       </button>
        {/* Logo Section */}
        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[#1d1d1f] rounded-[20px] flex items-center justify-center mx-auto mb-4 shadow-xl shadow-black/10">
+          <div className="w-16 h-16 bg-[#0a84ff] rounded-[20px] flex items-center justify-center mx-auto mb-4 shadow-xl shadow-blue-500/20">
              <span className="text-3xl text-white">⌂</span>
           </div>
           <h1 className="text-3xl font-bold">DormMate</h1>

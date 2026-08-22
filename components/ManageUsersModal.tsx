@@ -43,7 +43,7 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
       <div className="bg-white rounded-[28px] w-full max-w-md shadow-2xl shadow-black/20 overflow-hidden border border-black/[0.06]">
         
         {/* Header */}
-        <div className="bg-[#1d1d1f] p-5 flex justify-between items-center">
+        <div className="bg-[#0a84ff] p-5 flex justify-between items-center">
           <h2 id="profiles-modal-title" className="text-lg font-bold text-white flex items-center gap-2">
             <UserIcon className="w-5 h-5 text-white/70" />
             Manage profiles

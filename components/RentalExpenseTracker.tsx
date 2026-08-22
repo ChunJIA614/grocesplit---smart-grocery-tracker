@@ -207,9 +207,9 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
       </div>
 
       {/* OVERDUE AMOUNT LIST ON TOP */}
-      <div className="bg-[#1d1d1f] text-white p-5 rounded-[24px] shadow-xl shadow-black/10 border border-black">
-        <h3 className="text-xs font-bold uppercase text-white/60 flex items-center gap-2 mb-4">
-          <AlertCircle className="w-4 h-4 text-blue-300" />
+      <div className="overdue-panel bg-[#eaf4ff] text-[#1d4ed8] p-5 rounded-[24px] shadow-xl shadow-blue-900/10 border border-blue-100">
+        <h3 className="text-xs font-bold uppercase text-blue-700/70 flex items-center gap-2 mb-4">
+          <AlertCircle className="w-4 h-4 text-[#0a84ff]" />
           Roommate Overdue Balances (Dorm & Bills Only)
         </h3>
 
@@ -223,8 +223,8 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                 key={user.id} 
                 className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
                   isCleared 
-                    ? 'bg-blue-950/20 border-blue-500/20 text-blue-200'
-                    : 'bg-blue-900/30 border-blue-400/30 text-blue-100'
+                    ? 'bg-white/70 border-blue-100 text-[#1d4ed8]'
+                    : 'bg-blue-50 border-blue-200 text-[#1d4ed8]'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -232,18 +232,18 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                     {user.name[0]}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-gray-300 truncate">{user.name} {user.id === currentUser.id ? '(You)' : ''}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{isCleared ? 'No Outstanding' : 'Unpaid Share'}</p>
+                    <p className="text-xs font-bold text-[#1d4ed8] truncate">{user.name} {user.id === currentUser.id ? '(You)' : ''}</p>
+                    <p className="text-[10px] text-blue-700/70 mt-0.5">{isCleared ? 'No Outstanding' : 'Unpaid Share'}</p>
                   </div>
                 </div>
                 
                 <div className="text-right ml-2 shrink-0">
                   {isCleared ? (
-                    <span className="bg-blue-500/20 text-blue-300 text-[10px] font-extrabold px-2 py-1 rounded-full border border-blue-500/10">
+                    <span className="bg-blue-100 text-blue-700 text-[10px] font-extrabold px-2 py-1 rounded-full border border-blue-200">
                       All Clear 🎉
                     </span>
                   ) : (
-                    <span className="text-sm font-black text-blue-200">
+                    <span className="text-sm font-black text-[#1d4ed8]">
                       ${overdue.toFixed(2)}
                     </span>
                   )}

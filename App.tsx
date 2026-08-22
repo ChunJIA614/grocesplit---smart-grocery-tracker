@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LayoutGrid, List as ListIcon, Plus, User as UserIcon, CloudOff, Cloud, LogOut, Wifi, WifiOff, RefreshCw, Wind, CreditCard, X } from 'lucide-react';
+import { LayoutGrid, List as ListIcon, Plus, User as UserIcon, CloudOff, Cloud, LogOut, Wifi, WifiOff, RefreshCw, Wind, CreditCard, X, Sun, Moon } from 'lucide-react';
 import { GroceryService } from './services/groceryService';
 import { PushNotificationService } from './services/pushNotificationService';
 import { suggestRecipe } from './services/geminiService';
@@ -34,6 +34,9 @@ const App: React.FC = () => {
   // Connectivity State
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => (
+    typeof window !== 'undefined' && localStorage.getItem('dormmate_theme') === 'dark' ? 'dark' : 'light'
+  ));
   
   
   // Modals
@@ -42,6 +45,13 @@ const App: React.FC = () => {
   
   const [editingItem, setEditingItem] = useState<GroceryItem | undefined>(undefined);
   const [recipeText, setRecipeText] = useState<string>('');
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('dormmate_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(current => current === 'light' ? 'dark' : 'light');
 
   useEffect(() => {
     if (!isModalOpen && !isUserModalOpen) return;
@@ -345,6 +355,8 @@ const App: React.FC = () => {
           users={users} 
           onSelectUser={handleUserLogin} 
           onManageUsers={() => setUserModalOpen(true)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
         {isUserModalOpen && (
           <ManageUsersModal
@@ -360,13 +372,13 @@ const App: React.FC = () => {
 
   // Main App
   return (
-    <div className="min-h-screen bg-[#f6f7fb] flex flex-col md:flex-row font-sans text-[#1d1d1f]">
+    <div className="theme-app min-h-screen bg-[#f6f7fb] flex flex-col md:flex-row font-sans text-[#1d1d1f]">
       
       {/* PWA Update Prompt */}
       {showUpdatePrompt && (
         <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-[28px] bg-white shadow-2xl border border-black/[0.06] overflow-hidden">
-            <div className="bg-[#1d1d1f] p-6 text-white">
+            <div className="bg-[#0a84ff] p-6 text-white">
               <p className="text-xs uppercase text-white/55 font-semibold mb-2">Update ready</p>
               <h2 className="text-2xl font-bold leading-tight">A newer DormMate is ready</h2>
               <p className="text-sm text-white/65 mt-2">
@@ -400,7 +412,7 @@ const App: React.FC = () => {
       {/* Mobile Header */}
       <div className={`md:hidden material-surface bg-white/80 backdrop-blur-xl border-b border-black/[0.06] px-4 py-3 flex justify-between items-center sticky ${!isOnline || showUpdatePrompt ? 'top-10' : 'top-0'} z-50 safe-area-top`}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-[#1d1d1f] rounded-xl flex items-center justify-center">
+          <div className="w-9 h-9 bg-[#0a84ff] rounded-xl flex items-center justify-center">
             <span className="text-lg text-white">⌂</span>
           </div>
           <div>
@@ -415,6 +427,15 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            aria-pressed={theme === 'dark'}
+            title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            className="w-10 h-10 rounded-full bg-[#eaf4ff] text-[#0077ed] flex items-center justify-center"
+          >
+            {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+          </button>
           <button 
             className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center shadow-sm border-2 border-white"
             onClick={() => setUserModalOpen(true)}
@@ -429,7 +450,7 @@ const App: React.FC = () => {
       <aside className="hidden md:flex flex-col w-64 bg-white/75 backdrop-blur-xl border-r border-black/[0.06] h-screen sticky top-0">
         <div className="p-6 border-b border-black/[0.06]">
           <h1 className="text-2xl font-bold text-[#1d1d1f] flex items-center gap-2">
-            <span className="w-8 h-8 bg-[#1d1d1f] rounded-xl flex items-center justify-center text-white">⌂</span>
+            <span className="w-8 h-8 bg-[#0a84ff] rounded-xl flex items-center justify-center text-white">⌂</span>
             DormMate
           </h1>
           <div className="mt-2 flex items-center gap-2 text-xs">
@@ -510,6 +531,15 @@ const App: React.FC = () => {
           >
             <UserIcon className="w-4 h-4" />
             Manage Members
+          </button>
+          <button
+            onClick={toggleTheme}
+            aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            aria-pressed={theme === 'dark'}
+            className="w-full flex items-center gap-3 px-2 py-2 rounded hover:bg-gray-100 transition-colors text-left text-xs text-gray-500"
+          >
+            {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            {theme === 'light' ? 'Dark mode' : 'Light mode'}
           </button>
         </div>
       </aside>
