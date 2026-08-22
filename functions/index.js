@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 
 admin.initializeApp();
 
@@ -20,22 +20,14 @@ const getPushTokens = async (recipientIds) => {
     .filter(Boolean);
 };
 
-const getGroceryRecipientIds = async (entry) => {
-  const directRecipients = Array.isArray(entry.recipientIds)
-    ? entry.recipientIds.filter((id) => typeof id === 'string' && id.length > 0)
-    : [];
+const normalizeRecipientIds = (ids) => [...new Set(
+  (Array.isArray(ids) ? ids : []).filter((id) => typeof id === 'string' && id.length > 0)
+)];
 
-  if (directRecipients.length > 0) {
-    return [...new Set(directRecipients)];
-  }
-
-  const itemId = typeof entry.itemId === 'string' ? entry.itemId : '';
-  if (!itemId) return [];
-
-  const itemSnapshot = await firestore.collection('items').doc(itemId).get();
-  const item = itemSnapshot.exists ? itemSnapshot.data() : null;
-  const sharedBy = item && Array.isArray(item.sharedBy) ? item.sharedBy : [];
-  return [...new Set(sharedBy.filter((id) => typeof id === 'string' && id.length > 0))];
+const haveSameRecipients = (left, right) => {
+  const leftIds = normalizeRecipientIds(left).sort();
+  const rightIds = normalizeRecipientIds(right).sort();
+  return leftIds.length === rightIds.length && leftIds.every((id, index) => id === rightIds[index]);
 };
 
 const sendPush = async ({ title, body, url = '/', data = {}, recipientIds }) => {
@@ -84,26 +76,41 @@ const sendPush = async ({ title, body, url = '/', data = {}, recipientIds }) => 
   );
 };
 
-exports.sendSplitPaymentPush = onDocumentCreated('paymentHistory/{entryId}', async (event) => {
-  const entry = event.data && event.data.data();
+exports.sendSplitPaymentPush = onDocumentWritten('items/{itemId}', async (event) => {
+  const before = event.data.before.exists ? event.data.before.data() : null;
+  const item = event.data.after.exists ? event.data.after.data() : null;
 
-  if (!entry || entry.type !== 'BILL_CREATED') {
+  if (!item || item.status !== 'USED') {
     return;
   }
 
-  const recipientIds = await getGroceryRecipientIds(entry);
+  const recipientIds = normalizeRecipientIds(item.sharedBy);
+  const becameUsed = !before || before.status !== 'USED';
+  const assignmentChanged = before && !haveSameRecipients(before.sharedBy, item.sharedBy);
+
+  if (recipientIds.length === 0 || (!becameUsed && !assignmentChanged)) {
+    return;
+  }
+
+  const amount = Number(item.totalPrice || 0);
+  const share = amount / recipientIds.length;
 
   await sendPush({
-    title: `New grocery bill: ${entry.itemName || 'Shared grocery'}`,
-    body: `Latest bill $${Number(entry.latestBillAmount || entry.amount || 0).toFixed(2)} | Total overdue $${Number(entry.totalOutstanding || 0).toFixed(2)}`,
+    title: `New grocery bill: ${item.name || 'Shared grocery'}`,
+    body: `Your share is $${share.toFixed(2)} from a $${amount.toFixed(2)} grocery bill.`,
     data: {
       kind: 'grocery-bill',
-      entryId: entry.id || event.params.entryId,
-      itemId: entry.itemId || '',
+      itemId: item.id || event.params.itemId,
     },
     recipientIds,
   });
 });
+
+if (require.main === module) {
+  const assert = require('node:assert/strict');
+  assert.equal(haveSameRecipients(['u1', 'u2'], ['u2', 'u1']), true);
+  assert.equal(haveSameRecipients(['u1'], ['u1', 'u2']), false);
+}
 
 exports.sendRentalExpensePush = onDocumentCreated('rentalExpenses/{expenseId}', async (event) => {
   const expense = event.data && event.data.data();
