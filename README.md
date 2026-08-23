@@ -121,6 +121,11 @@ service cloud.firestore {
 3. Put the key into `FIREBASE_VAPID_KEY` in your build environment.
 4. Confirm Cloud Messaging is enabled for the same Firebase project used by Firestore.
 
+Cloud Functions send background push notifications for newly created grocery bills,
+rental/shared bills, and app update events. A browser/device must grant notification
+permission and register its FCM token while signed in; the PWA service worker then
+receives notifications even when the app window is closed.
+
 ## 🤖 AI Features Setup
 
 The app uses **Google GenAI** with the **Gemma 3 4B** model for:
@@ -240,9 +245,12 @@ npm run preview    # Preview production build locally
 To fully enable background push notifications:
 
 1. Build the frontend so the custom service worker is generated.
-2. Deploy Cloud Functions so new bill records trigger push sends.
+2. Deploy Cloud Functions so grocery, rental, and update records trigger push sends.
 3. Deploy Hosting so the live app can register FCM tokens.
 4. Open the live app, grant notification permission, and install the PWA.
+5. The first signed-in client that opens the new build publishes one deterministic
+   release event to Firestore. Cloud Functions then sends the update notification
+   to all registered devices. No `gcloud` installation is required.
 
 If you skip step 2, users can still see in-app and browser notifications, but true background push will not fire when the app is closed.
 

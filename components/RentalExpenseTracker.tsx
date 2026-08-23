@@ -17,6 +17,7 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
   const [splitWithIds, setSplitWithIds] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPayingAll, setIsPayingAll] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filterMonth, setFilterMonth] = useState<string>('all'); // "all" or "YYYY-MM"
 
@@ -149,52 +150,50 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
     }
   };
 
-  // Toggle user's paid status on a specific expense
-  const togglePaidStatus = async (expense: DormExpense, userId: string) => {
-    const paidList = expense.paidByUserIds ? [...expense.paidByUserIds] : [];
-    let updatedPaidList: string[];
+  const handlePayAll = async () => {
+    const amountDue = overdueBalances[currentUser.id] || 0;
+    if (amountDue <= 0) return;
+    if (!window.confirm(`Mark all your rental and shared bill payments ($${amountDue.toFixed(2)}) as paid?`)) return;
 
-    if (paidList.includes(userId)) {
-      updatedPaidList = paidList.filter(id => id !== userId);
-    } else {
-      updatedPaidList = [...paidList, userId];
-    }
-
-    const updatedExpense: DormExpense = {
-      ...expense,
-      paidByUserIds: updatedPaidList
-    };
-
+    setIsPayingAll(true);
     try {
-      await RentalService.saveExpense(updatedExpense);
+      await RentalService.markAllExpensesPaid(expenses, currentUser.id);
     } catch (error) {
-      alert('Error updating payment status. Please try again.');
+      alert('Error updating rental payments. Please try again.');
+    } finally {
+      setIsPayingAll(false);
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Header and Filter */}
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <div className="bg-white p-5 rounded-[24px] shadow-sm border border-black/[0.06]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
+            <div className="p-2 bg-[#eaf4ff] rounded-xl text-[#0a84ff]">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-gray-800">Dorm Rent & Shared Bills</h3>
-              <p className="text-xs text-gray-500">Track monthly rent, wifi, utilities, and split them. Outstanding balances are listed below.</p>
+              <h3 className="text-base font-bold text-gray-900">Dorm Rent & Shared Bills</h3>
+              <p className="text-xs text-[#6e6e73]">Track shared household costs and settle your balance in one step.</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {(overdueBalances[currentUser.id] || 0) > 0 && (
+              <Button onClick={handlePayAll} isLoading={isPayingAll} className="rounded-xl text-xs whitespace-nowrap">
+                <DollarSign className="w-4 h-4" />
+                Pay All (${(overdueBalances[currentUser.id] || 0).toFixed(2)})
+              </Button>
+            )}
+            <span className="text-xs font-semibold text-gray-400 uppercase flex items-center gap-1">
               <ListFilter className="w-3.5 h-3.5" /> Filter Month:
             </span>
             <select
               value={filterMonth}
               onChange={(e) => setFilterMonth(e.target.value)}
-              className="bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+              className="bg-[#f2f2f7] border border-black/[0.06] text-gray-700 text-xs rounded-xl px-3 py-2 font-semibold"
             >
               <option value="all">All Months</option>
               {uniqueMonths.map(month => {
@@ -208,9 +207,9 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
       </div>
 
       {/* OVERDUE AMOUNT LIST ON TOP */}
-      <div className="bg-gradient-to-br from-gray-900 to-slate-800 text-white p-5 rounded-2xl shadow-md border border-gray-800">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2 mb-4">
-          <AlertCircle className="w-4 h-4 text-rose-400" />
+      <div className="overdue-panel bg-[#eaf4ff] text-[#1d4ed8] p-5 rounded-[24px] shadow-xl shadow-blue-900/10 border border-blue-100">
+        <h3 className="text-xs font-bold uppercase text-blue-700/70 flex items-center gap-2 mb-4">
+          <AlertCircle className="w-4 h-4 text-[#0a84ff]" />
           Roommate Overdue Balances (Dorm & Bills Only)
         </h3>
 
@@ -224,27 +223,27 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                 key={user.id} 
                 className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
                   isCleared 
-                    ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-200' 
-                    : 'bg-rose-950/20 border-rose-500/20 text-rose-200'
+                    ? 'bg-white/70 border-blue-100 text-[#1d4ed8]'
+                    : 'bg-blue-50 border-blue-200 text-[#1d4ed8]'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={`w-8 h-8 rounded-full ${user.avatarColor || 'bg-blue-600'} text-white font-bold text-xs flex items-center justify-center shrink-0 border border-white/10`}>
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-white/10">
                     {user.name[0]}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-gray-300 truncate">{user.name} {user.id === currentUser.id ? '(You)' : ''}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{isCleared ? 'No Outstanding' : 'Unpaid Share'}</p>
+                    <p className="text-xs font-bold text-[#1d4ed8] truncate">{user.name} {user.id === currentUser.id ? '(You)' : ''}</p>
+                    <p className="text-[10px] text-blue-700/70 mt-0.5">{isCleared ? 'No Outstanding' : 'Unpaid Share'}</p>
                   </div>
                 </div>
                 
                 <div className="text-right ml-2 shrink-0">
                   {isCleared ? (
-                    <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold px-2 py-1 rounded-full border border-emerald-500/10">
+                    <span className="bg-blue-100 text-blue-700 text-[10px] font-extrabold px-2 py-1 rounded-full border border-blue-200">
                       All Clear 🎉
                     </span>
                   ) : (
-                    <span className="text-sm font-black text-rose-400">
+                    <span className="text-sm font-black text-[#1d4ed8]">
                       ${overdue.toFixed(2)}
                     </span>
                   )}
@@ -258,9 +257,9 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
       {/* Grid Layout: Add Expense (Left) & History logs (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Entry Form */}
-        <div className="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 h-fit">
-          <h3 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Plus className="w-5 h-5 text-blue-600" />
+        <div className="lg:col-span-1 bg-white p-5 rounded-[24px] shadow-sm border border-black/[0.06] h-fit">
+          <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Plus className="w-5 h-5 text-[#0a84ff]" />
             Add Bill or Rental
           </h3>
 
@@ -334,7 +333,7 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                       className="w-full flex items-center justify-between text-left"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className={`w-2.5 h-2.5 rounded-full ${user.avatarColor || 'bg-blue-600'} shrink-0`}></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0"></div>
                         <span className="text-sm text-gray-700 font-medium truncate">
                           {user.name} {user.id === currentUser.id ? '(You)' : ''}
                         </span>
@@ -373,9 +372,9 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
         </div>
 
         {/* History List */}
-        <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-h-[400px]">
+        <div className="lg:col-span-2 bg-white p-5 rounded-[24px] shadow-sm border border-black/[0.06] flex flex-col min-h-[400px]">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-gray-600" />
               Shared Bill History logs
             </h3>
@@ -427,16 +426,16 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
 
                       <div className="flex items-center gap-2 shrink-0">
                         <div className="text-right">
-                          <span className="text-base sm:text-lg font-black text-blue-600 block">
+                          <span className="text-base sm:text-lg font-black text-[#0a84ff] block">
                             ${exp.amount.toFixed(2)}
                           </span>
-                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase">
                             ${shareCost.toFixed(2)} each
                           </span>
                         </div>
                         <button
                           onClick={() => handleDelete(exp.id)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-1"
+                          className="p-2 text-gray-400 hover:text-[#0077ed] hover:bg-[#eaf4ff] rounded-lg transition-colors ml-1"
                           title="Delete record"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -444,10 +443,10 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                       </div>
                     </div>
 
-                    {/* Roommates Checklist (Tick status directly here) */}
+                    {/* Roommate payment status */}
                     <div className="mt-4 pt-3.5 border-t border-gray-150">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                        Roommates Paid Status (Click your own badge to toggle):
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">
+                        Roommates Paid Status
                       </p>
                       
                       <div className="flex flex-wrap gap-2">
@@ -456,30 +455,23 @@ export const RentalExpenseTracker: React.FC<RentalExpenseTrackerProps> = ({ user
                           const isCurrentUser = u.id === currentUser.id;
                           
                           return (
-                            <button
+                            <div
                               key={u.id}
-                              onClick={() => {
-                                if (!isCurrentUser) {
-                                  alert(`Only ${u.name} can toggle their own payment status.`);
-                                  return;
-                                }
-                                togglePaidStatus(exp, u.id);
-                              }}
-                              className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-xl border font-semibold transition-all shadow-sm ${
+                              className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-xl border font-semibold shadow-sm ${
                                 isPaid
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200' + (isCurrentUser ? ' hover:bg-emerald-100 cursor-pointer' : ' cursor-default opacity-85')
-                                  : 'bg-rose-50 text-rose-700 border-rose-200' + (isCurrentUser ? ' hover:bg-rose-100 cursor-pointer' : ' cursor-default opacity-85')
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : 'bg-blue-100 text-blue-800 border-blue-300'
                               }`}
-                              title={isCurrentUser ? `Click to mark as ${isPaid ? 'Unpaid' : 'Paid'}` : `${u.name}'s payment status`}
+                              title={`${u.name}'s payment status`}
                             >
-                              <div className={`w-2.5 h-2.5 rounded-full ${u.avatarColor || 'bg-blue-600'} shrink-0`} />
+                              <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" />
                               <span>{u.name} {isCurrentUser ? '(You)' : ''}</span>
                               {isPaid ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                               ) : (
-                                <div className="w-3.5 h-3.5 rounded-full border border-rose-400/50 shrink-0" />
+                                <div className="w-3.5 h-3.5 rounded-full border border-blue-500/50 shrink-0" />
                               )}
-                            </button>
+                            </div>
                           );
                         })}
                       </div>

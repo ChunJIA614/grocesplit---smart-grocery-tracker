@@ -29,6 +29,9 @@ if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.messagin
   messagingInitialized = true;
 
   onBackgroundMessage(messaging, (payload) => {
+    // Firebase displays notification payloads automatically when no app client is visible.
+    if (payload.notification) return;
+
     const title = payload.notification?.title || payload.data?.title || 'New split payment';
     const body = payload.notification?.body || payload.data?.body || 'A new bill was added.';
     const url = payload.data?.url || '/';
@@ -44,30 +47,6 @@ if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.messagin
 
 self.addEventListener('install', () => {
   self.skipWaiting();
-});
-
-self.addEventListener('push', (event) => {
-  let data: any = {};
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      data = { body: event.data.text() };
-    }
-  }
-
-  const title = data.notification?.title || data.title || data.data?.title || 'DormMate Notification';
-  const body = data.notification?.body || data.body || data.data?.body || 'There is an update in your dorm.';
-  const url = data.data?.url || data.url || '/';
-
-    event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon: '/pwa-192x192-v2.png',
-      badge: '/pwa-192x192-v2.png',
-      data: { url },
-    })
-  );
 });
 
 self.addEventListener('notificationclick', (event) => {

@@ -10,27 +10,18 @@ interface Props {
   onDeleteUser: (id: string) => void;
 }
 
-const AVATAR_COLORS = [
-  'bg-blue-600', 'bg-purple-600', 'bg-green-600', 'bg-yellow-500', 
-  'bg-red-600', 'bg-pink-600', 'bg-indigo-600', 'bg-gray-600',
-  'bg-teal-600', 'bg-orange-500'
-];
-
 export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, onDeleteUser }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [color, setColor] = useState(AVATAR_COLORS[0]);
 
   const handleEditClick = (user: User) => {
     setEditingId(user.id);
     setName(user.name);
-    setColor(user.avatarColor);
   };
 
   const handleNewClick = () => {
     setEditingId('NEW');
     setName('');
-    setColor(AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -40,7 +31,7 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
     const userToSave: User = {
       id: editingId === 'NEW' ? Date.now().toString() : editingId!,
       name,
-      avatarColor: color
+      avatarColor: 'bg-blue-600'
     };
 
     onSaveUser(userToSave);
@@ -48,16 +39,16 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded w-full max-w-md shadow-lg overflow-hidden border border-gray-200">
+    <div role="dialog" aria-modal="true" aria-labelledby="profiles-modal-title" className="fixed inset-0 bg-black/35 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-[28px] w-full max-w-md shadow-2xl shadow-black/20 overflow-hidden border border-black/[0.06]">
         
         {/* Header */}
-        <div className="bg-gray-100 p-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <UserIcon className="w-5 h-5 text-blue-600" />
-            Manage People
+        <div className="bg-[#0a84ff] p-5 flex justify-between items-center">
+          <h2 id="profiles-modal-title" className="text-lg font-bold text-white flex items-center gap-2">
+            <UserIcon className="w-5 h-5 text-white/70" />
+            Manage profiles
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button onClick={onClose} aria-label="Close" className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -67,9 +58,9 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
           {/* User List */}
           <div className="space-y-2 mb-6 max-h-60 overflow-y-auto pr-2">
             {users.map(user => (
-              <div key={user.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded hover:border-blue-200 transition-colors">
+              <div key={user.id} className="flex items-center justify-between p-3 bg-white border border-black/[0.06] rounded-2xl hover:bg-[#f2f2f7] transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full ${user.avatarColor} text-white flex items-center justify-center text-xs font-bold`}>
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
                     {user.name[0]?.toUpperCase()}
                   </div>
                   <span className="font-medium text-gray-700">{user.name}</span>
@@ -77,7 +68,7 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
                 <div className="flex gap-2">
                   <button 
                     onClick={() => handleEditClick(user)}
-                    className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50"
+                    className="min-h-10 text-[#0a84ff] hover:text-[#0077ed] text-sm px-3 py-1 rounded-xl hover:bg-[#eaf4ff]"
                   >
                     Edit
                   </button>
@@ -86,7 +77,8 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
                       onClick={() => {
                         if(window.confirm(`Delete ${user.name}?`)) onDeleteUser(user.id);
                       }}
-                      className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                      aria-label={`Delete ${user.name}`}
+                      className="w-10 h-10 text-[#1d4ed8] hover:text-[#1e40af] flex items-center justify-center rounded-xl hover:bg-[#eaf4ff]"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -98,7 +90,7 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
 
           {/* Edit/Add Form */}
           {editingId ? (
-            <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded border border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <form onSubmit={handleSubmit} className="bg-[#f2f2f7] p-4 rounded-2xl border border-black/[0.05] animate-in fade-in slide-in-from-bottom-4 duration-300">
               <h3 className="text-sm font-bold text-gray-700 mb-3">
                 {editingId === 'NEW' ? 'Add New Person' : 'Edit Person'}
               </h3>
@@ -114,20 +106,6 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onSaveUser, 
                   placeholder="Enter name"
                   required
                 />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-xs font-semibold text-gray-500 mb-2">Avatar Color</label>
-                <div className="flex flex-wrap gap-2">
-                  {AVATAR_COLORS.map(c => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setColor(c)}
-                      className={`w-6 h-6 rounded-full transition-transform ${c} ${color === c ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : 'hover:scale-110'}`}
-                    />
-                  ))}
-                </div>
               </div>
 
               <div className="flex gap-2 justify-end">

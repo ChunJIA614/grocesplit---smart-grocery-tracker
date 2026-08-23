@@ -39,6 +39,7 @@ export interface PaymentHistoryEntry {
   latestBillAmount: number;
   createdAt: string;
   message: string;
+  recipientIds?: string[];
 }
 
 export interface PushTokenRecord {

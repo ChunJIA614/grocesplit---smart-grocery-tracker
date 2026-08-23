@@ -116,34 +116,34 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col animate-slide-up">
+    <div role="dialog" aria-modal="true" aria-labelledby="grocery-modal-title" className="fixed inset-0 bg-black/35 backdrop-blur-md z-50 flex items-end sm:items-center justify-center">
+      <div className="bg-white rounded-t-[28px] sm:rounded-[28px] w-full sm:max-w-md shadow-2xl shadow-black/20 overflow-hidden border border-black/[0.06] max-h-[90vh] flex flex-col animate-slide-up">
         
         {/* Header - Bootstrap style */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 flex justify-between items-center shrink-0">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
+        <div className="bg-[#0a84ff] p-5 flex justify-between items-center shrink-0">
+          <h2 id="grocery-modal-title" className="text-lg font-bold text-white flex items-center gap-2">
+            <div className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center">
               <ShoppingBag className="w-4 h-4 text-white" />
             </div>
             {initialItem ? 'Edit Item' : 'Add Groceries'}
           </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-colors">
+           <button onClick={onClose} aria-label="Close" className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tabs - Only show if adding new */}
         {!initialItem && (
-          <div className="flex p-3 gap-2 bg-gray-50 border-b border-gray-100 shrink-0">
+           <div className="flex p-3 gap-2 bg-[#f2f2f7] border-b border-black/[0.05] shrink-0">
             <button 
               onClick={() => setMode('manual')}
-              className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all ${mode === 'manual' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+               className={`flex-1 min-h-11 py-2.5 text-sm font-semibold rounded-xl ${mode === 'manual' ? 'bg-white text-[#0a84ff] shadow-sm' : 'text-gray-500'}`}
             >
               ✍️ Manual
             </button>
             <button 
               onClick={() => setMode('ai')}
-              className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 ${mode === 'ai' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500'}`}
+              className={`flex-1 min-h-11 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-1.5 ${mode === 'ai' ? 'bg-white text-[#0a84ff] shadow-sm' : 'text-gray-500'}`}
             >
               <Sparkles className="w-4 h-4" />
               AI Paste
@@ -156,7 +156,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
           {mode === 'manual' ? (
             <form onSubmit={handleManualSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Item Name</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Item Name</label>
                 <input 
                   autoFocus
                   type="text" 
@@ -169,7 +169,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Quantity</label>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Quantity</label>
                   <div className="flex">
                     <input 
                       type="number" 
@@ -189,7 +189,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Total Price ($)</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Total Price ($)</label>
                   <input 
                     type="number" 
                     step="0.01"
@@ -203,7 +203,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
 
               {initialItem?.status === ItemStatus.USED && (
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide flex items-center gap-2">
+                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase flex items-center gap-2">
                     <Users className="w-3.5 h-3.5" />
                     Split Cost With
                   </label>
@@ -215,7 +215,7 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
                         onClick={() => toggleUser(user.id)}
                         className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
                           selectedUsers.includes(user.id)
-                          ? `${user.avatarColor} text-white shadow-sm`
+                          ? 'bg-[#0a84ff] text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600'
                         }`}
                       >
@@ -238,24 +238,24 @@ export const AddGroceryModal: React.FC<Props> = ({ users, onClose, onSave, initi
             </form>
           ) : (
             <div className="space-y-4">
-              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                <h3 className="text-sm font-semibold text-purple-900 mb-1 flex items-center gap-2">
+              <div className="bg-[#eaf4ff] p-4 rounded-xl border border-blue-100">
+                <h3 className="text-sm font-semibold text-blue-900 mb-1 flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />
                   How this works
                 </h3>
-                <p className="text-xs text-purple-700">
+                <p className="text-xs text-blue-700">
                   Paste your receipt text. Gemini will detect items, prices, and suggest splits.
                 </p>
               </div>
               <textarea
                 value={aiInput}
                 onChange={e => setAiInput(e.target.value)}
-                className="w-full h-36 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 text-base resize-none"
+                className="w-full h-36 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-base resize-none"
                 placeholder="Type or paste receipt details here..."
               ></textarea>
               <Button 
                 onClick={handleAiSubmit} 
-                className="w-full justify-center py-3 bg-purple-600 hover:bg-purple-700 border-purple-600"
+                className="w-full justify-center py-3 bg-[#0a84ff] hover:bg-[#0077ed] border-[#0a84ff]"
                 isLoading={loading}
               >
                 <Sparkles className="w-4 h-4" />

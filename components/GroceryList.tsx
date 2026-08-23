@@ -55,7 +55,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
           td { padding: 12px 15px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
           tr:nth-child(even) { background: #fafafa; }
           .status-fridge { color: #2563eb; font-weight: 500; }
-          .status-used { color: #16a34a; font-weight: 500; }
+          .status-used { color: #1d4ed8; font-weight: 500; }
           .price { font-weight: 600; }
           .shared-by { font-size: 12px; color: #6b7280; }
           .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 12px; }
@@ -146,11 +146,11 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
       
       {/* Recipe Suggestion Banner - Bootstrap Alert Style */}
       {filter === 'FRIDGE' && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-4 rounded-2xl flex justify-between items-start">
+        <div className="bg-[#eaf4ff] border border-blue-100 p-4 rounded-[20px] flex justify-between items-start">
            <div className="flex-1">
              <h4 className="font-bold text-sm mb-1 flex items-center gap-2 text-blue-800">
-               <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
-                 <Package className="w-3.5 h-3.5 text-blue-600" />
+               <div className="w-6 h-6 rounded-lg bg-white/80 flex items-center justify-center">
+                 <Package className="w-3.5 h-3.5 text-[#0a84ff]" />
                </div>
                Smart Suggestion
              </h4>
@@ -158,7 +158,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                {recipeSuggestion || "Add ingredients to get an AI suggestion..."}
              </p>
            </div>
-           <button onClick={onRefreshRecipe} className="text-blue-500 p-2 rounded-xl hover:bg-blue-100 active:scale-95 transition-all ml-2">
+             <button onClick={onRefreshRecipe} aria-label="Refresh suggestion" className="min-w-10 min-h-10 text-blue-500 p-2 rounded-xl hover:bg-blue-100 ml-2">
              <RefreshCcw className="w-4 h-4" />
            </button>
         </div>
@@ -166,15 +166,15 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
 
       {/* Filter Tabs and Export Button */}
       <div className="flex items-center gap-2">
-        <div className="flex flex-1 bg-gray-100 p-1 rounded-xl gap-1">
+        <div className="flex flex-1 bg-[#e5e5ea] p-1 rounded-xl gap-1">
           {(['FRIDGE', 'USED', 'ALL'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
               className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
                 filter === tab 
-                ? 'bg-white text-gray-800 shadow-sm' 
-                : 'text-gray-500'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-[#6e6e73]'
               }`}
             >
               {tab === 'FRIDGE' ? '🧊 Fridge' : tab === 'USED' ? '✅ Used' : '📜 All'}
@@ -183,7 +183,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
         </div>
         <button
           onClick={exportToPDF}
-          className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors active:scale-95 shadow-sm"
+          className="min-h-10 flex items-center gap-1.5 px-3 py-2 bg-[#0a84ff] hover:bg-[#0077ed] text-white text-xs font-semibold rounded-xl shadow-sm"
           title="Export to PDF"
         >
           <FileDown className="w-4 h-4" />
@@ -194,7 +194,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
       {/* List - Bootstrap List Group / Cards */}
       <div className="space-y-2">
         {filteredItems.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
+            <div className="text-center py-16 text-gray-400 bg-white rounded-[24px] border border-dashed border-black/[0.12]">
             <span className="text-4xl mb-3 block">📭</span>
             <p className="font-medium">No items found</p>
             <p className="text-xs text-gray-400 mt-1">Tap + to add groceries</p>
@@ -203,8 +203,8 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
           filteredItems.map(item => (
             <div 
               key={item.id} 
-              className={`p-4 bg-white rounded-2xl border transition-all ${
-                item.status === ItemStatus.USED ? 'bg-gray-50 border-gray-100' : 'border-gray-100 active:border-blue-200'
+              className={`p-4 bg-white rounded-[22px] border transition-all ${
+                item.status === ItemStatus.USED ? 'bg-[#f2f2f7] border-transparent' : 'border-black/[0.06] hover:border-blue-200'
               }`}
             >
               {/* Top row: Name and actions */}
@@ -226,7 +226,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                   {item.status === ItemStatus.FRIDGE ? (
                     <button 
                       onClick={() => openUseModal(item)}
-                      className="w-10 h-10 rounded-xl bg-green-50 text-green-600 active:bg-green-100 flex items-center justify-center transition-colors"
+                      className="w-11 h-11 rounded-xl bg-[#eaf4ff] text-[#0a84ff] hover:bg-[#dceeff] flex items-center justify-center"
                       title="Mark as Used"
                     >
                       <Check className="w-5 h-5" />
@@ -234,7 +234,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                   ) : (
                     <button 
                       onClick={() => onStatusChange(item.id, ItemStatus.FRIDGE)}
-                      className="w-10 h-10 rounded-xl bg-gray-100 text-gray-500 active:bg-gray-200 flex items-center justify-center transition-colors"
+                      className="w-11 h-11 rounded-xl bg-[#e5e5ea] text-gray-500 hover:bg-[#d8d8dd] flex items-center justify-center"
                       title="Move back to Fridge"
                     >
                       <RefreshCcw className="w-4 h-4" />
@@ -243,7 +243,8 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                   
                   <button 
                     onClick={() => onEdit(item)}
-                    className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 active:bg-blue-100 flex items-center justify-center transition-colors"
+                    aria-label={`Edit ${item.name}`}
+                    className="w-11 h-11 rounded-xl bg-[#eaf4ff] text-[#0a84ff] hover:bg-[#dceeff] flex items-center justify-center"
                     title="Edit Item"
                   >
                     <Pencil className="w-4 h-4" />
@@ -251,7 +252,8 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
 
                   <button 
                     onClick={() => onDelete(item.id)}
-                    className="w-10 h-10 rounded-xl bg-red-50 text-red-500 active:bg-red-100 flex items-center justify-center transition-colors"
+                    aria-label={`Delete ${item.name}`}
+                    className="w-11 h-11 rounded-xl bg-[#eaf4ff] text-[#1d4ed8] hover:bg-[#dceeff] flex items-center justify-center"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -272,7 +274,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                         <div 
                           key={uid} 
                           title={user.name}
-                          className={`w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-[9px] text-white font-bold ${user.avatarColor}`}
+                          className="w-5 h-5 rounded-full border-2 border-white bg-blue-600 flex items-center justify-center text-[9px] text-white font-bold"
                         >
                           {user.name[0]}
                         </div>
@@ -293,11 +295,11 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
 
       {/* Use Quantity Modal */}
       {useModalItem && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-sm p-6 animate-slide-up">
+        <div role="dialog" aria-modal="true" aria-labelledby="use-item-title" className="fixed inset-0 bg-black/35 backdrop-blur-md z-50 flex items-end sm:items-center justify-center">
+              <div className="bg-white rounded-t-[28px] sm:rounded-[28px] w-full sm:max-w-sm p-6 shadow-2xl animate-slide-up">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-lg font-bold text-gray-800">Use Item</h3>
+                <h3 id="use-item-title" className="text-lg font-bold text-gray-800">Use Item</h3>
                 <p className="text-sm text-gray-500">{useModalItem.name}</p>
               </div>
               <button 
@@ -364,7 +366,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
             </div>
 
             <div className="mb-4">
-              <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Split Cost With</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase">Split Cost With</label>
               <div className="flex flex-wrap gap-2">
                 {users.map(user => (
                   <button
@@ -373,7 +375,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                     onClick={() => setUseSelectedUsers(prev => prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id])}
                     className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
                       useSelectedUsers.includes(user.id)
-                        ? `${user.avatarColor} text-white shadow-sm`
+                        ? 'bg-[#0a84ff] text-white shadow-sm'
                         : 'bg-gray-100 text-gray-600'
                     }`}
                   >
@@ -385,7 +387,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
                 Per person: <span className="font-bold text-gray-700">${useSelectedUsers.length ? ((useModalItem.unitPrice * useQuantity) / useSelectedUsers.length).toFixed(2) : '0.00'}</span>
               </div>
               {useSelectedUsers.length === 0 && (
-                <div className="mt-2 text-xs text-red-500">Select at least one person.</div>
+                <div className="mt-2 text-xs text-[#1d4ed8]">Select at least one person.</div>
               )}
             </div>
             
@@ -395,7 +397,7 @@ export const GroceryList: React.FC<Props> = ({ items, users, onStatusChange, onD
               className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors ${
                 useSelectedUsers.length === 0
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-600 text-white active:bg-green-700'
+                  : 'bg-[#0a84ff] text-white active:bg-[#0077ed]'
               }`}
             >
               <Check className="w-5 h-5" />
